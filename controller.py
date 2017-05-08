@@ -1,6 +1,6 @@
 from flask import Flask
 import serial
-ser = serial.Serial('/dev/ttyACM1', 9600)
+ser = serial.Serial('/dev/ttyACM0', 9600)
 app = Flask(__name__)
 
 @app.route("/")

@@ -81,25 +81,31 @@
 
     <script>
 
-    var ip="192.168.137.195:5000"
+    var ip="192.168.137.65:5000"
 
     $( ".panel" ).mouseup(function() {
-      console.log(ip+"/s")
+      //console.log(ip+"/s")
       $.ajax({
-        url:ip+"/s",  
+        url:"http://"+ip+"/s",  
         success:function(data) {
           console.log(data); 
-        }
+        },
+	error:function(){
+	  console.log("error")
+	}
       });
     });
 
     function command(that){
-      console.log(ip+"/"+that.id)
+      //console.log(ip+"/"+that.id)
       $.ajax({
-        url:ip+"/"+that.id,  
+        url:"http://"+ip+"/"+that.id,  
         success:function(data) {
           console.log(data); 
-        }
+        },
+	error:function(){
+	  console.log("error")
+	}
       });
     }
     </script>
