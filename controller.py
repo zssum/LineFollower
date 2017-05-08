@@ -5,13 +5,32 @@ app = Flask(__name__)
 
 @app.route("/")
 def hello():
-    ser.write("read")
-    return "Hello World!"
+    return app.send_static_file('controller.html')
 
-@app.route("/g")
-def g():
-    ser.write("read1")
-    return "Hello World!"
+@app.route("/f")
+def f():
+    #ser.write("f")
+    return "Forward"
+
+@app.route("/b")
+def b():
+    #ser.write("b")
+    return "Backward"
+
+@app.route("/l")
+def l():
+    #ser.write("l")
+    return "Left"
+
+@app.route("/r")
+def r():
+    #ser.write("r")
+    return "Right"
+
+@app.route("/s")
+def s():
+    #ser.write("s")
+    return "Stop"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0")
