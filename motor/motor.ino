@@ -4,7 +4,9 @@
 #define RM1     29
 #define RM2     31
 #define RM_PWM  3
-#define MOTORSPEED  20
+#define MOTORSPEED  40
+
+String action
 
 void setup() {
   // put your setup code here, to run once:
@@ -20,46 +22,45 @@ void setup() {
 
 void loop() {
   while(Serial.available()){
-    if (Serial.readString()=="f") {
-        analogWrite(LM_PWM,MOTORSPEED);
-        digitalWrite(LM1,HIGH);
-        digitalWrite(LM2,LOW);
-        analogWrite(RM_PWM,MOTORSPEED);
-        digitalWrite(RM1,HIGH);
-        digitalWrite(RM2,LOW);
-    }
-    if (Serial.readString()=="b") {
-        analogWrite(LM_PWM,MOTORSPEED);
-        digitalWrite(LM1,LOW);
-        digitalWrite(LM2,HIGH);
-        analogWrite(RM_PWM,MOTORSPEED);
-        digitalWrite(RM1,LOW);
-        digitalWrite(RM2,HIGH);
-    }
-    if (Serial.readString()=="l") {
-        analogWrite(LM_PWM,MOTORSPEED);
-        digitalWrite(LM1,LOW);
-        digitalWrite(LM2,HIGH);
-        analogWrite(RM_PWM,MOTORSPEED);
-        digitalWrite(RM1,HIGH);
-        digitalWrite(RM2,LOW);
-    }
-    if (Serial.readString()=="r") {
-        analogWrite(LM_PWM,MOTORSPEED);
-        digitalWrite(LM1,HIGH);
-        digitalWrite(LM2,LOW);
-        analogWrite(RM_PWM,MOTORSPEED);
-        digitalWrite(RM1,LOW);
-        digitalWrite(RM2,HIGH);
-    }
-    if (Serial.readString()=="s") {
-        analogWrite(LM_PWM,0);
-        digitalWrite(LM1,LOW);
-        digitalWrite(LM2,LOW);
-        analogWrite(RM_PWM,0);
-        digitalWrite(RM1,LOW);
-        digitalWrite(RM2,LOW);
-    }
+    action=Serial.readString();
   }
+  
+  if (action=="f") {
+      analogWrite(LM_PWM,MOTORSPEED);
+      digitalWrite(LM1,HIGH);
+      digitalWrite(LM2,LOW);
+      analogWrite(RM_PWM,MOTORSPEED);
+      digitalWrite(RM1,HIGH);
+      digitalWrite(RM2,LOW);
+  } else if (action =="b") {
+      analogWrite(LM_PWM,MOTORSPEED);
+      digitalWrite(LM1,LOW);
+      digitalWrite(LM2,HIGH);
+      analogWrite(RM_PWM,MOTORSPEED);
+      digitalWrite(RM1,LOW);
+      digitalWrite(RM2,HIGH);
+  } else if (action =="l") {
+      analogWrite(LM_PWM,MOTORSPEED);
+      digitalWrite(LM1,LOW);
+      digitalWrite(LM2,HIGH);
+      analogWrite(RM_PWM,MOTORSPEED);
+      digitalWrite(RM1,HIGH);
+      digitalWrite(RM2,LOW);
+  } else if (action=="r") {
+      analogWrite(LM_PWM,MOTORSPEED);
+      digitalWrite(LM1,HIGH);
+      digitalWrite(LM2,LOW);
+      analogWrite(RM_PWM,MOTORSPEED);
+      digitalWrite(RM1,LOW);
+      digitalWrite(RM2,HIGH);
+  } else (action=="s") {
+      analogWrite(LM_PWM,0);
+      digitalWrite(LM1,LOW);
+      digitalWrite(LM2,LOW);
+      analogWrite(RM_PWM,0);
+      digitalWrite(RM1,LOW);
+      digitalWrite(RM2,LOW);
+  }
+  
 
 }
