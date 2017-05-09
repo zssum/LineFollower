@@ -9,27 +9,27 @@ def hello():
 
 @app.route("/f")
 def f():
-    #ser.write("f")
+    ser.write("f")
     return "Forward"
 
 @app.route("/b")
 def b():
-    #ser.write("b")
+    ser.write("b")
     return "Backward"
 
 @app.route("/l")
 def l():
-    #ser.write("l")
+    ser.write("l")
     return "Left"
 
 @app.route("/r")
 def r():
-    #ser.write("r")
+    ser.write("r")
     return "Right"
 
 @app.route("/s")
 def s():
-    #ser.write("s")
+    ser.write("s")
     return "Stop"
 
 if __name__ == "__main__":
