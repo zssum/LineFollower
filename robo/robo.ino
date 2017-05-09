@@ -10,7 +10,7 @@
 #define RM1     29
 #define RM2     31
 #define RM_PWM  3
-#define MOTORSPEED  40
+#define MOTORSPEED  50
 
 // sensors 0 through 7 are connected to digital pins 3 through 10, respectively
 QTRSensorsRC qtrrc((unsigned char[]) {22, 24, 26, 28, 30, 32, 34, 36},
@@ -27,7 +27,7 @@ void setup()
   pinMode(RM1,OUTPUT);
   pinMode(RM2,OUTPUT);
   delay(500);
-  Serial.setTimeout(10);
+  Serial.setTimeout(80);
   Serial.begin(9600); // set the data rate in bits per second for serial data transmission
   delay(1000);
 }
@@ -41,9 +41,14 @@ void loop()
 
 
   if(action=="read") read();
-  else if (action=="calibrate");
-  else if (action=="blah") blah;
-  else return;
+  else if (action=="calibrate") calibrate();
+  else if (action=="blah") blah();
+  else if (action=="f") motorFwd(MOTORSPEED);
+  else if (action=="b") motorBack(MOTORSPEED);
+  else if (action=="l") motorLeft(MOTORSPEED);
+  else if (action=="r") motorRight(MOTORSPEED);
+  else if (action=="s") motorStop();
+  else motorStop();
 }
 
 void blah(){
@@ -76,12 +81,18 @@ void calibrate(){
   digitalWrite(13, HIGH);    // turn on Arduino's LED to indicate we are in calibration mode
   for (int i = 0; i < 200; i++)  // make the calibration take about 5 seconds
   {
-    switch (i){
-      case 0: motorLeft(30);
+    /*switch (i){
+      Serial.print(i);
+      case 0: motorLeft(60);
       case 95: motorStop();
-      case 105: motorRight(30);
+      case 105: motorRight(60);
       case 199: motorStop();      
-    }
+    }*/
+    if(i<60) motorLeft(50);
+    else if (i>60&&i<140) motorStop();
+    else if (i>141&& i<199) motorRight(50);
+    else  motorStop();
+      
     qtrrc.calibrate();       // reads all sensors 10 times at 2500 us per read (i.e. ~25 ms per call)
   }
   digitalWrite(13, LOW);     // turn off Arduino's LED to indicate we are through with calibration
