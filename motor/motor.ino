@@ -15,7 +15,7 @@ void setup() {
   pinMode(RM1,OUTPUT);
   pinMode(RM2,OUTPUT);
   delay(500);
-  Serial.setTimeout(10);
+  Serial.setTimeout(100);
   Serial.begin(9600); // set the data rate in bits per second for serial data transmission
   delay(1000);
 }

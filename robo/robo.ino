@@ -12,12 +12,20 @@
 #define RM_PWM  3
 #define MOTORSPEED  50
 
+#define Kp 0 // experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
+#define Kd 0 // experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
+#define RIGHT_MAX_SPEED 200 // max speed of the robot
+#define LEFT_MAX_SPEED 200 // max speed of the robot
+#define RIGHT_BASE_SPEED 150 // this is the speed at which the motors should spin when the robot is perfectly on the line
+#define LEFT_BASE_SPEED 150  // this is the speed at which the motors should spin when the robot is perfectly on the line
+
 // sensors 0 through 7 are connected to digital pins 3 through 10, respectively
 QTRSensorsRC qtrrc((unsigned char[]) {22, 24, 26, 28, 30, 32, 34, 36},
   NUM_SENSORS, TIMEOUT, EMITTER_PIN); 
 unsigned int sensorValues[NUM_SENSORS];
-String action;
 
+String action;
+int lastError = 0;
 
 void setup()
 {
@@ -48,6 +56,7 @@ void loop()
   else if (action=="l") motorLeft(MOTORSPEED);
   else if (action=="r") motorRight(MOTORSPEED);
   else if (action=="s") motorStop();
+  else if (action=="go") drive();
   else motorStop();
 }
 
@@ -164,4 +173,31 @@ void motorStop(){
     digitalWrite(RM1,LOW);
     digitalWrite(RM2,LOW);
 }
+
+void drive(){
+  unsigned int position = qtrrc.readLine(sensorValues); // get calibrated readings along with the line position, refer to the QTR Sensors Arduino Library for more details on line position.
+  int error = position - 3500;
+
+  int motorSpeed = Kp * error + Kd * (error - lastError);
+  lastError = error;
+
+  int rightMotorSpeed = RIGHT_BASE_SPEED + motorSpeed;
+  int leftMotorSpeed = LEFT_BASE_SPEED - motorSpeed;
+  
+  if (rightMotorSpeed > RIGHT_MAX_SPEED ) rightMotorSpeed = RIGHT_MAX_SPEED; // prevent the motor from going beyond max speed
+  if (leftMotorSpeed > LEFT_MAX_SPEED ) leftMotorSpeed = LEFT_MAX_SPEED; // prevent the motor from going beyond max speed
+  if (rightMotorSpeed < 0) rightMotorSpeed = 0; // keep the motor speed positive
+  if (leftMotorSpeed < 0) leftMotorSpeed = 0; // keep the motor speed positive
+
+  analogWrite(LM_PWM,leftMotorSpeed);
+  digitalWrite(LM1,HIGH);
+  digitalWrite(LM2,LOW);
+  analogWrite(RM_PWM,rightMotorSpeed);
+  digitalWrite(RM1,HIGH);
+  digitalWrite(RM2,LOW);
+  Serial.print("drive");
+  Serial.println();
+  delay(1);
+}
+
 
