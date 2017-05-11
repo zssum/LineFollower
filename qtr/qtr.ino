@@ -60,5 +60,5 @@ void loop()
   //Serial.println(); // uncomment this line if you are using raw values
   Serial.println(position); // comment this line out if you are using raw values
   
-  delay(250);
+  delay(100);
 }

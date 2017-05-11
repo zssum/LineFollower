@@ -4,20 +4,22 @@
 #define NUM_SENSORS   8     // number of sensors used
 #define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low
 #define EMITTER_PIN   23     // emitter is controlled by digital pin 2
-#define LM1     25        
+#define LM1     25        //(25,27,29,31 burnt)
 #define LM2     27
-#define LM_PWM  2
+#define LM_PWM  2 //(2,3 burnt)
 #define RM1     29
 #define RM2     31
 #define RM_PWM  3
 #define MOTORSPEED  50
 
-#define Kp 0.008 // experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
-#define Kd 0.01 // experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
+
+
+#define Kp 0.08 // experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
+#define Kd 0.1 // experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
 #define RIGHT_MAX_SPEED 120 // max speed of the robot
 #define LEFT_MAX_SPEED  120// max speed of the robot
-#define RIGHT_BASE_SPEED 80 // this is the speed at which the motors should spin when the robot is perfectly on the line
-#define LEFT_BASE_SPEED 80  // this is the speed at which the motors should spin when the robot is perfectly on the line
+#define RIGHT_BASE_SPEED 50 // this is the speed at which the motors should spin when the robot is perfectly on the line
+#define LEFT_BASE_SPEED 50  // this is the speed at which the motors should spin when the robot is perfectly on the line
 
 // sensors 0 through 7 are connected to digital pins 3 through 10, respectively
 QTRSensorsRC qtrrc((unsigned char[]) {22, 24, 26, 28, 30, 32, 34, 36},
@@ -35,28 +37,35 @@ void setup()
   pinMode(LM2,OUTPUT);
   pinMode(RM1,OUTPUT);
   pinMode(RM2,OUTPUT);
+  digitalWrite(LM1,LOW);
+  digitalWrite(LM2,LOW);
+  digitalWrite(RM1,LOW);
+  digitalWrite(RM2,LOW);
+  
+  
+  
   delay(500);
   Serial.setTimeout(80);
   Serial.begin(9600); // set the data rate in bits per second for serial data transmission
   delay(1000);
   
   qtrrc.calibrate();
-  qtrrc.calibratedMinimumOn[0]=908;
-  qtrrc.calibratedMinimumOn[1]=596;
-  qtrrc.calibratedMinimumOn[2]=492;
-  qtrrc.calibratedMinimumOn[3]=540;
-  qtrrc.calibratedMinimumOn[4]=440;
-  qtrrc.calibratedMinimumOn[5]=440;
-  qtrrc.calibratedMinimumOn[6]=440;
-  qtrrc.calibratedMinimumOn[7]=544;
+  
+  qtrrc.calibratedMinimumOn[0]=1008;
+  qtrrc.calibratedMinimumOn[1]=692;
+  qtrrc.calibratedMinimumOn[2]=588;
+  qtrrc.calibratedMinimumOn[3]=588;
+  qtrrc.calibratedMinimumOn[4]=484;
+  qtrrc.calibratedMinimumOn[5]=488;
+  qtrrc.calibratedMinimumOn[6]=484;
+  qtrrc.calibratedMinimumOn[7]=640;
   
   
   for (int i = 0; i < NUM_SENSORS; i++)
   {
+    //qtrrc.calibratedMaximumOn[i]=600;
     qtrrc.calibratedMaximumOn[i]=2500;
   }
-  //qtrrc.calibratedMinimumOn=minimum;
-  //qtrrc.calibratedMaximumOn=maximum;
   
 }
 
@@ -90,7 +99,7 @@ void read(){
     // read calibrated sensor values and obtain a measure of the line position from 0 to 5000
   // To get raw sensor values, call:
   //  qtrrc.read(sensorValues); instead of unsigned int position = qtrrc.readLine(sensorValues);
-  unsigned int position = qtrrc.readLine(sensorValues);
+  unsigned int position = qtrrc.readLine(sensorValues); 
 
   // print the sensor values as numbers from 0 to 1000, where 0 means maximum reflectance and
   // 1000 means minimum reflectance, followed by the line position
@@ -210,18 +219,20 @@ void drive(){
   if (rightMotorSpeed < 0) rightMotorSpeed = 0; // keep the motor speed positive
   if (leftMotorSpeed < 0) leftMotorSpeed = 0; // keep the motor speed positive
   
-  if(error<-3000 ){
+  if(error==-3500 ){
     //motorStop();
     //delay(5);
-    motorLeft(60);
+    motorLeft(70);
     Serial.print("lockleft");    
     Serial.println();
-  } else if (error>3000){
+    delay(200);
+  } else if (error==3500){
     Serial.print("lockright");
     Serial.println();
     //motorStop();
     //delay(5);
-    motorRight(60);
+    motorRight(70);
+    delay(200);
   } else {
     analogWrite(LM_PWM,leftMotorSpeed);
     digitalWrite(LM1,HIGH);
@@ -232,9 +243,17 @@ void drive(){
     //Serial.print("drive");
     //Serial.println();
   }
-
   
-  delay(1);
+  int black=0;
+  for (unsigned char i = 0; i < NUM_SENSORS; i++)
+  {    
+    if(sensorValues[i]==1000) black++;
+  }
+  if(black==8) action="s";
+  Serial.println(position);
+  delay(2);
+  
+  
 }
 
 //1052 776 632 676 576 576 580 788 
