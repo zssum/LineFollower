@@ -63,9 +63,7 @@ void setup()
 
 void loop()
 {
-   while(Serial.available()){
-    action=Serial.readString();
-  }
+  
   if(action=="read") read();
   else if (action=="calibrate") calibrate();
   else if (action=="blah") blah();
@@ -213,6 +211,12 @@ void serialEvent1() {
     } else{
       inputString += inChar;
     }
+  }
+}
+
+void serialEvent() {
+   while(Serial.available()){
+    action=Serial.readString();
   }
 }
 //1052 776 632 676 576 576 580 788 
