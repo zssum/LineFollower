@@ -10,7 +10,7 @@
 #define RM1     29
 #define RM2     31
 #define RM_PWM  3
-#define MOTORSPEED  50
+#define MOTORSPEED  30
 
 
 
