@@ -1,12 +1,12 @@
 #include <QTRSensors.h>
-
+#include "motor.h"
 
 #define NUM_SENSORS   8     // number of sensors used
 #define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low
-#define EMITTER_PIN   23     // emitter is controlled by digital pin 2
-#define LM1     25        //(25,27,29,31 burnt)
+#define EMITTER_PIN   23     // emitter is controlled by digital pin 23
+#define LM1     25       
 #define LM2     27
-#define LM_PWM  2 //(2,3 burnt)
+#define LM_PWM  2 
 #define RM1     29
 #define RM2     31
 #define RM_PWM  3
@@ -24,30 +24,21 @@
 // sensors 0 through 7 are connected to digital pins 3 through 10, respectively
 QTRSensorsRC qtrrc((unsigned char[]) {22, 24, 26, 28, 30, 32, 34, 36},
   NUM_SENSORS, TIMEOUT, EMITTER_PIN); 
+Motor motor(LM1, LM2, LM_PWM, RM1, RM2, RM_PWM, MOTORSPEED);
 unsigned int sensorValues[NUM_SENSORS];
 
 
 String action;
+String inputString;
 int lastError = 0;
 
 void setup()
 {
   pinMode(13, OUTPUT); //Arduino LED
-  pinMode(LM1,OUTPUT);
-  pinMode(LM2,OUTPUT);
-  pinMode(RM1,OUTPUT);
-  pinMode(RM2,OUTPUT);
-  digitalWrite(LM1,LOW);
-  digitalWrite(LM2,LOW);
-  digitalWrite(RM1,LOW);
-  digitalWrite(RM2,LOW);
   
-  
-  
-  delay(500);
-  Serial.setTimeout(80);
   Serial.begin(9600); // set the data rate in bits per second for serial data transmission
-  delay(1000);
+  Serial.setTimeout(80);
+  Serial1.begin(9600); // set the data rate in bits per second for serial data transmission
   
   qtrrc.calibrate();
   
@@ -72,21 +63,19 @@ void setup()
 
 void loop()
 {
-  while(Serial.available()){
+   while(Serial.available()){
     action=Serial.readString();
   }
-
-
   if(action=="read") read();
   else if (action=="calibrate") calibrate();
   else if (action=="blah") blah();
-  else if (action=="f") motorFwd(MOTORSPEED);
-  else if (action=="b") motorBack(MOTORSPEED);
-  else if (action=="l") motorLeft(MOTORSPEED);
-  else if (action=="r") motorRight(MOTORSPEED);
-  else if (action=="s") motorStop();
+  else if (action=="f") motor.motorFwd(MOTORSPEED);
+  else if (action=="b") motor.motorBack(MOTORSPEED);
+  else if (action=="l") motor.motorLeft(MOTORSPEED);
+  else if (action=="r") motor.motorRight(MOTORSPEED);
+  else if (action=="s") motor.motorStop();
   else if (action=="go") drive();
-  else motorStop();
+  else motor.motorStop();
 }
 
 void blah(){
@@ -127,10 +116,10 @@ void calibrate(){
       case 105: motorRight(60);
       case 199: motorStop();      
     }*/
-    if(i<60) motorLeft(50);
-    else if (i>60&&i<140) motorStop();
-    else if (i>141&& i<199) motorRight(50);
-    else  motorStop();
+    if(i<60) motor.motorLeft(50);
+    else if (i>60&&i<140) motor.motorStop();
+    else if (i>141&& i<199) motor.motorRight(50);
+    else  motor.motorStop();
       
     qtrrc.calibrate();       // reads all sensors 10 times at 2500 us per read (i.e. ~25 ms per call)
   }
@@ -158,52 +147,6 @@ void calibrate(){
 
 
 
-
-void motorFwd(int motorspeed){
-    analogWrite(LM_PWM, motorspeed);
-    digitalWrite(LM1,HIGH);
-    digitalWrite(LM2,LOW);
-    analogWrite(RM_PWM,motorspeed);
-    digitalWrite(RM1,HIGH);
-    digitalWrite(RM2,LOW);
-}
-
-void motorBack(int motorspeed){
-    analogWrite(LM_PWM, motorspeed);
-    digitalWrite(LM1,LOW);
-    digitalWrite(LM2,HIGH);
-    analogWrite(RM_PWM,motorspeed);
-    digitalWrite(RM1,LOW);
-    digitalWrite(RM2,HIGH);
-}
-
-void motorLeft(int motorspeed){
-    analogWrite(LM_PWM,motorspeed);
-    digitalWrite(LM1,LOW);
-    digitalWrite(LM2,HIGH);
-    analogWrite(RM_PWM,motorspeed);
-    digitalWrite(RM1,HIGH);
-    digitalWrite(RM2,LOW);
-}
-
-void motorRight(int motorspeed){
-    analogWrite(LM_PWM,motorspeed);
-    digitalWrite(LM1,HIGH);
-    digitalWrite(LM2,LOW);
-    analogWrite(RM_PWM,motorspeed);
-    digitalWrite(RM1,LOW);
-    digitalWrite(RM2,HIGH);
-}
-
-void motorStop(){
-    analogWrite(LM_PWM,0);
-    digitalWrite(LM1,LOW);
-    digitalWrite(LM2,LOW);
-    analogWrite(RM_PWM,0);
-    digitalWrite(RM1,LOW);
-    digitalWrite(RM2,LOW);
-}
-
 void drive(){
   unsigned int position = qtrrc.readLine(sensorValues); // get calibrated readings along with the line position, refer to the QTR Sensors Arduino Library for more details on line position.
   int error = 3500-position;
@@ -222,7 +165,7 @@ void drive(){
   if(error==-3500 ){
     //motorStop();
     //delay(5);
-    motorLeft(70);
+    motor.motorLeft(70);
     Serial.print("lockleft");    
     Serial.println();
     delay(200);
@@ -231,7 +174,7 @@ void drive(){
     Serial.println();
     //motorStop();
     //delay(5);
-    motorRight(70);
+    motor.motorRight(70);
     delay(200);
   } else {
     analogWrite(LM_PWM,leftMotorSpeed);
@@ -256,6 +199,22 @@ void drive(){
   
 }
 
+void serialEvent1() {
+  while (Serial1.available()) {  
+    // get the new byte:
+    char inChar = (char)Serial1.read();
+    // add it to the inputString:
+    
+    // if the incoming character is a newline, set a flag
+    // so the main loop can do something about it:
+    if (inChar == '#') {
+      action=inputString;
+      inputString="";
+    } else{
+      inputString += inChar;
+    }
+  }
+}
 //1052 776 632 676 576 576 580 788 
 
 //2500 2500 2500 2500 2500 2500 2500 2500 
