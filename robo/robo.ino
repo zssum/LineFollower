@@ -10,7 +10,14 @@
 #define RM1     29
 #define RM2     31
 #define RM_PWM  3
-#define MOTORSPEED  30
+#define MOTORSPEED  50
+
+
+
+#define  trigPin  51    
+#define  echoPin  49    
+#define  sonicVcc 53
+#define  sonicGnd 47
 
 
 
@@ -31,10 +38,17 @@ unsigned int sensorValues[NUM_SENSORS];
 String action;
 String inputString;
 int lastError = 0;
+long duration, cm, inches;
 
 void setup()
 {
   pinMode(13, OUTPUT); //Arduino LED
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(sonicVcc,OUTPUT);
+  pinMode(sonicGnd, OUTPUT);
+  digitalWrite(sonicVcc,HIGH);
+  digitalWrite(sonicGnd,LOW);
   
   Serial.begin(9600); // set the data rate in bits per second for serial data transmission
   Serial.setTimeout(80);
@@ -72,8 +86,16 @@ void loop()
   else if (action=="l") motor.motorLeft(MOTORSPEED);
   else if (action=="r") motor.motorRight(MOTORSPEED);
   else if (action=="s") motor.motorStop();
+  else if (action=="det") detectRange();
   else if (action=="go") drive();
   else motor.motorStop();
+  
+  detectRange();
+  while(cm<15){
+    detectRange();
+    motor.motorStop();
+    Serial.println("object in front");
+  }
 }
 
 void blah(){
@@ -193,8 +215,35 @@ void drive(){
   if(black==8) action="s";
   Serial.println(position);
   delay(2);
+}
+
+void detectRange()
+{
+  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
+  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(5);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+ 
+  // Read the signal from the sensor: a HIGH pulse whose
+  // duration is the time (in microseconds) from the sending
+  // of the ping to the reception of its echo off of an object.
+  pinMode(echoPin, INPUT);
+  duration = pulseIn(echoPin, HIGH);
+ 
+  // convert the time into a distance
+  cm = (duration/2) / 29.1;
+  inches = (duration/2) / 74; 
   
+  Serial.print(inches);
+  Serial.print("in, ");
+  Serial.print(cm);
+  Serial.print("cm");
+  Serial.println();
   
+  delay(5);
 }
 
 void serialEvent1() {
