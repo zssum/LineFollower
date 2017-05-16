@@ -215,7 +215,7 @@ void detectRange()
   // duration is the time (in microseconds) from the sending
   // of the ping to the reception of its echo off of an object.
   pinMode(echoPin, INPUT);
-  duration = pulseIn(echoPin, HIGH);
+  duration = pulseIn(echoPin, HIGH,1750);
  
   // convert the time into a distance
   cm = (duration/2) / 29.1;
