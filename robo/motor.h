@@ -10,6 +10,7 @@ class Motor{
 		void motorBack(int motorspeed);
 		void motorLeft(int motorspeed);
 		void motorRight(int motorspeed);
+		void motorSlight(int leftMotorSpeed, int rightMotorSpeed);
 		void motorStop();
 	private:
 		int m_lm1;

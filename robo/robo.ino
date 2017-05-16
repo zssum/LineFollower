@@ -1,7 +1,7 @@
 #include <QTRSensors.h>
 #include "motor.h"
 
-//#define DEBUG //comment out to disable debugging
+#define DEBUG //comment out to disable debugging
 #ifdef DEBUG
 #define debug(x)     Serial.print(x)
 #define debugln(x)   Serial.println(x)
@@ -10,10 +10,12 @@
 #define debugln(x)
 #endif
 
-
+//QTR Settings
 #define NUM_SENSORS   8     // number of sensors used
 #define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low
 #define EMITTER_PIN   23     // emitter is controlled by digital pin 23
+
+//Motor Settings
 #define LM1     25       
 #define LM2     27
 #define LM_PWM  2 
@@ -22,15 +24,14 @@
 #define RM_PWM  3
 #define MOTORSPEED  50
 
-
-
+// Ultrasound Distance Detector Settings
 #define  trigPin  51    
 #define  echoPin  49    
 #define  sonicVcc 53
 #define  sonicGnd 47
 
 
-
+// Line Follower PID constants
 #define Kp 0.08 // experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
 #define Kd 0.1 // experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
 #define RIGHT_MAX_SPEED 120 // max speed of the robot
@@ -38,17 +39,16 @@
 #define RIGHT_BASE_SPEED 50 // this is the speed at which the motors should spin when the robot is perfectly on the line
 #define LEFT_BASE_SPEED 50  // this is the speed at which the motors should spin when the robot is perfectly on the line
 
-// sensors 0 through 7 are connected to digital pins 3 through 10, respectively
+// Initialising motors and QTR(ir) sensor
 QTRSensorsRC qtrrc((unsigned char[]) {22, 24, 26, 28, 30, 32, 34, 36},
   NUM_SENSORS, TIMEOUT, EMITTER_PIN); 
 Motor motor(LM1, LM2, LM_PWM, RM1, RM2, RM_PWM, MOTORSPEED);
+
 unsigned int sensorValues[NUM_SENSORS];
-
-
-String action;
-String inputString;
-int lastError = 0;
-long duration, cm, inches;
+String action; // Robot State
+String inputString; // Command builder
+int lastError = 0; //Last Line Following Error
+long duration, cm, inches; //distance detection variables
 
 void setup()
 {
@@ -90,13 +90,11 @@ void loop()
   
   if(action=="read") read();
   else if (action=="calibrate") calibrate();
-  else if (action=="blah") blah();
   else if (action=="f") motor.motorFwd(MOTORSPEED);
   else if (action=="b") motor.motorBack(MOTORSPEED);
   else if (action=="l") motor.motorLeft(MOTORSPEED);
   else if (action=="r") motor.motorRight(MOTORSPEED);
   else if (action=="s") motor.motorStop();
-  else if (action=="det") detectRange();
   else if (action=="go") drive();
   else motor.motorStop();
   
@@ -106,12 +104,6 @@ void loop()
     motor.motorStop();
     debugln("object in front");
   }
-}
-
-void blah(){
-  debug("ok");
-  delay(1000);
-  debug("wheee");
 }
 
 void read(){
@@ -124,11 +116,11 @@ void read(){
   // 1000 means minimum reflectance, followed by the line position
   for (unsigned char i = 0; i < NUM_SENSORS; i++)
   {
-    debug(sensorValues[i]);
-    debug('\t');
+    Serial.print(sensorValues[i]);
+    Serial.print('\t');
   }
-  //debugln(); // uncomment this line if you are using raw values
-  debugln(position); // comment this line out if you are using raw values
+  //Serial.println(); // uncomment this line if you are using raw values
+  Serial.println(position); // comment this line out if you are using raw values
   
   delay(250);
 }
@@ -139,17 +131,10 @@ void calibrate(){
   digitalWrite(13, HIGH);    // turn on Arduino's LED to indicate we are in calibration mode
   for (int i = 0; i < 200; i++)  // make the calibration take about 5 seconds
   {
-    /*switch (i){
-      debug(i);
-      case 0: motorLeft(60);
-      case 95: motorStop();
-      case 105: motorRight(60);
-      case 199: motorStop();      
-    }*/
-    if(i<60) motor.motorLeft(50);
-    else if (i>60&&i<140) motor.motorStop();
+    if(i<60) motor.motorLeft(50); 
+    else if (i>60&&i<140) motor.motorStop(); 
     else if (i>141&& i<199) motor.motorRight(50);
-    else  motor.motorStop();
+    else  motor.motorStop(); //Robot rotates anticlockwise for first 1.5s stops for 2s and rotates clockwise for 1.5s
       
     qtrrc.calibrate();       // reads all sensors 10 times at 2500 us per read (i.e. ~25 ms per call)
   }
@@ -158,21 +143,21 @@ void calibrate(){
   // print the calibration minimum values measured when emitters were on
   for (int i = 0; i < NUM_SENSORS; i++)
   {
-    debug(qtrrc.calibratedMinimumOn[i]);
-    debug(' ');
+    Serial.print(qtrrc.calibratedMinimumOn[i]);
+    Serial.print(' ');
   }
-  debugln();
+  Serial.println();
   
   // print the calibration maximum values measured when emitters were on
   for (int i = 0; i < NUM_SENSORS; i++)
   {
-    debug(qtrrc.calibratedMaximumOn[i]);
-    debug(' ');
+    Serial.print(qtrrc.calibratedMaximumOn[i]);
+    Serial.print(' ');
   }
-  debugln();
-  debugln();
+  Serial.println();
+  Serial.println();
   delay(1000);  
-  action= "idle";
+  action= "s";
 }
 
 
@@ -192,9 +177,7 @@ void drive(){
   if (rightMotorSpeed < 0) rightMotorSpeed = 0; // keep the motor speed positive
   if (leftMotorSpeed < 0) leftMotorSpeed = 0; // keep the motor speed positive
   
-  if(error==-3500 ){
-    //motorStop();
-    //delay(5);
+  if(error==-3500 ){ // if line is on the left of the robot, stop line detection and rotate to the anti-clockwise for 0.2s
     motor.motorLeft(70);
     debug("lockleft");    
     debugln();
@@ -202,19 +185,10 @@ void drive(){
   } else if (error==3500){
     debug("lockright");
     debugln();
-    //motorStop();
-    //delay(5);
     motor.motorRight(70);
     delay(200);
-  } else {
-    analogWrite(LM_PWM,leftMotorSpeed);
-    digitalWrite(LM1,HIGH);
-    digitalWrite(LM2,LOW);
-    analogWrite(RM_PWM,rightMotorSpeed);
-    digitalWrite(RM1,HIGH);
-    digitalWrite(RM2,LOW);
-    //debug("drive");
-    //debugln();
+  } else { 
+    motor.motorSlight(leftMotorSpeed,rightMotorSpeed);
   }
   
   int black=0;
@@ -224,7 +198,7 @@ void drive(){
   }
   if(black==8) action="s";
   debugln(position);
-  delay(2);
+  delay(5);
 }
 
 void detectRange()
@@ -253,7 +227,7 @@ void detectRange()
   debug("cm");
   debugln();
   
-  delay(5);
+  delay(1);
 }
 
 void serialEvent1() {
