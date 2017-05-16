@@ -1,6 +1,16 @@
 #include <QTRSensors.h>
 #include "motor.h"
 
+//#define DEBUG //comment out to disable debugging
+#ifdef DEBUG
+#define debug(x)     Serial.print(x)
+#define debugln(x)   Serial.println(x)
+#else
+#define debug(x)     // define empty, so macro does nothing
+#define debugln(x)
+#endif
+
+
 #define NUM_SENSORS   8     // number of sensors used
 #define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low
 #define EMITTER_PIN   23     // emitter is controlled by digital pin 23
@@ -94,14 +104,14 @@ void loop()
   while(cm<15){
     detectRange();
     motor.motorStop();
-    Serial.println("object in front");
+    debugln("object in front");
   }
 }
 
 void blah(){
-  Serial.print("ok");
+  debug("ok");
   delay(1000);
-  Serial.print("wheee");
+  debug("wheee");
 }
 
 void read(){
@@ -114,11 +124,11 @@ void read(){
   // 1000 means minimum reflectance, followed by the line position
   for (unsigned char i = 0; i < NUM_SENSORS; i++)
   {
-    Serial.print(sensorValues[i]);
-    Serial.print('\t');
+    debug(sensorValues[i]);
+    debug('\t');
   }
-  //Serial.println(); // uncomment this line if you are using raw values
-  Serial.println(position); // comment this line out if you are using raw values
+  //debugln(); // uncomment this line if you are using raw values
+  debugln(position); // comment this line out if you are using raw values
   
   delay(250);
 }
@@ -130,7 +140,7 @@ void calibrate(){
   for (int i = 0; i < 200; i++)  // make the calibration take about 5 seconds
   {
     /*switch (i){
-      Serial.print(i);
+      debug(i);
       case 0: motorLeft(60);
       case 95: motorStop();
       case 105: motorRight(60);
@@ -148,19 +158,19 @@ void calibrate(){
   // print the calibration minimum values measured when emitters were on
   for (int i = 0; i < NUM_SENSORS; i++)
   {
-    Serial.print(qtrrc.calibratedMinimumOn[i]);
-    Serial.print(' ');
+    debug(qtrrc.calibratedMinimumOn[i]);
+    debug(' ');
   }
-  Serial.println();
+  debugln();
   
   // print the calibration maximum values measured when emitters were on
   for (int i = 0; i < NUM_SENSORS; i++)
   {
-    Serial.print(qtrrc.calibratedMaximumOn[i]);
-    Serial.print(' ');
+    debug(qtrrc.calibratedMaximumOn[i]);
+    debug(' ');
   }
-  Serial.println();
-  Serial.println();
+  debugln();
+  debugln();
   delay(1000);  
   action= "idle";
 }
@@ -186,12 +196,12 @@ void drive(){
     //motorStop();
     //delay(5);
     motor.motorLeft(70);
-    Serial.print("lockleft");    
-    Serial.println();
+    debug("lockleft");    
+    debugln();
     delay(200);
   } else if (error==3500){
-    Serial.print("lockright");
-    Serial.println();
+    debug("lockright");
+    debugln();
     //motorStop();
     //delay(5);
     motor.motorRight(70);
@@ -203,8 +213,8 @@ void drive(){
     analogWrite(RM_PWM,rightMotorSpeed);
     digitalWrite(RM1,HIGH);
     digitalWrite(RM2,LOW);
-    //Serial.print("drive");
-    //Serial.println();
+    //debug("drive");
+    //debugln();
   }
   
   int black=0;
@@ -213,7 +223,7 @@ void drive(){
     if(sensorValues[i]==1000) black++;
   }
   if(black==8) action="s";
-  Serial.println(position);
+  debugln(position);
   delay(2);
 }
 
@@ -237,11 +247,11 @@ void detectRange()
   cm = (duration/2) / 29.1;
   inches = (duration/2) / 74; 
   
-  Serial.print(inches);
-  Serial.print("in, ");
-  Serial.print(cm);
-  Serial.print("cm");
-  Serial.println();
+  debug(inches);
+  debug("in, ");
+  debug(cm);
+  debug("cm");
+  debugln();
   
   delay(5);
 }

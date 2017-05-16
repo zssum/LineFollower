@@ -28,7 +28,6 @@ void Motor::motorFwd(int motorspeed){
     analogWrite(m_rm_pwm,motorspeed);
     digitalWrite(m_rm1,HIGH);
     digitalWrite(m_rm2,LOW);
-    Serial.println("going fwd with headers2");
 }
 
 void Motor::motorBack(int motorspeed){
