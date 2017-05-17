@@ -1,7 +1,7 @@
 #include <QTRSensors.h>
 #include "motor.h"
 
-#define DEBUG //comment out to disable debugging
+//#define DEBUG //comment out to disable debugging
 #ifdef DEBUG
 #define debug(x)     Serial.print(x)
 #define debugln(x)   Serial.println(x)
@@ -32,12 +32,12 @@
 
 
 // Line Follower PID constants
-#define Kp 0.06 // experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
-#define Kd 0.10 // experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
-#define RIGHT_MAX_SPEED 120 // max speed of the robot
-#define LEFT_MAX_SPEED  120// max speed of the robot
-#define RIGHT_BASE_SPEED 50 // previoiusly 50 this is the speed at which the motors should spin when the robot is perfectly on the line
-#define LEFT_BASE_SPEED 50  // previously 50 this is the speed at which the motors should spin when the robot is perfectly on the line
+#define Kp 0.08 // experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
+#define Kd 0.12 // experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
+#define RIGHT_MAX_SPEED 130 // previously 120 max speed of the robot
+#define LEFT_MAX_SPEED  130// previously 120 max speed of the robot
+#define RIGHT_BASE_SPEED 70 // previoiusly 60 this is the speed at which the motors should spin when the robot is perfectly on the line
+#define LEFT_BASE_SPEED 70  // previously 60 this is the speed at which the motors should spin when the robot is perfectly on the line
 
 // Initialising motors and QTR(ir) sensor
 QTRSensorsRC qtrrc((unsigned char[]) {22, 24, 26, 28, 30, 32, 34, 36},
@@ -67,15 +67,15 @@ void setup()
  
   qtrrc.calibrate();
   
-  //1360	1036	776	876	676	676	676	876	
-  qtrrc.calibratedMinimumOn[0]=1360;
-  qtrrc.calibratedMinimumOn[1]=1036;
-  qtrrc.calibratedMinimumOn[2]=778;
-  qtrrc.calibratedMinimumOn[3]=876;
-  qtrrc.calibratedMinimumOn[4]=676;
-  qtrrc.calibratedMinimumOn[5]=676;
-  qtrrc.calibratedMinimumOn[6]=676;
-  qtrrc.calibratedMinimumOn[7]=876;
+  //956	692	536	640	488	488	536	692	
+  qtrrc.calibratedMinimumOn[0]=1656;
+  qtrrc.calibratedMinimumOn[1]=1392;
+  qtrrc.calibratedMinimumOn[2]=1236;
+  qtrrc.calibratedMinimumOn[3]=1340;
+  qtrrc.calibratedMinimumOn[4]=1188;
+  qtrrc.calibratedMinimumOn[5]=1188;
+  qtrrc.calibratedMinimumOn[6]=1236;
+  qtrrc.calibratedMinimumOn[7]=1392;
   
   
   for (int i = 0; i < NUM_SENSORS; i++)
@@ -182,8 +182,11 @@ void calibrate(){
 
 
 void drive(){
+  unsigned long starting=micros();
   unsigned int position = qtrrc.readLine(sensorValues); // get calibrated readings along with the line position, refer to the QTR Sensors Arduino Library for more details on line position.
   int error = 3500-position;
+  //debugln("read timeing");
+  //debugln(micros()-starting);
 
   int motorSpeed = Kp * error + Kd * (error - lastError);
   lastError = error;
@@ -195,6 +198,8 @@ void drive(){
   if (leftMotorSpeed > LEFT_MAX_SPEED ) leftMotorSpeed = LEFT_MAX_SPEED; // prevent the motor from going beyond max speed
   if (rightMotorSpeed < 0) rightMotorSpeed = 0; // keep the motor speed positive
   if (leftMotorSpeed < 0) leftMotorSpeed = 0; // keep the motor speed positive
+  //debugln("xxx");
+  //debugln(micros()-starting);
   
   if(error==-3500 ){ // if line is on the left of the robot, stop line detection and rotate to the anti-clockwise for 0.2s
     motor.motorLeft(70);
@@ -209,6 +214,8 @@ void drive(){
   } else { 
     motor.motorSlight(leftMotorSpeed,rightMotorSpeed);
   }
+  //debugln("read timeing1");
+  //debugln(micros()-starting);
   
   int black=0;
   for (unsigned char i = 0; i < NUM_SENSORS; i++)
@@ -217,6 +224,9 @@ void drive(){
   }
   if(black==8) action="s";
   debugln(position);
+  delay(5);
+  //debugln("timeing");
+  //debugln(micros()-starting);
 }
 
 void detectRange()
