@@ -234,6 +234,7 @@ void detectRange()
   // of the ping to the reception of its echo off of an object.
   pinMode(echoPin, INPUT);
   duration = pulseIn(echoPin, HIGH,1750);
+
   if(duration==0){
     cm=30;
     inches=10;
@@ -241,6 +242,9 @@ void detectRange()
     cm = (duration/2) / 29.1;
     inches = (duration/2) / 74; 
   }
+
+ 
+
   // convert the time into a distance
   
   
