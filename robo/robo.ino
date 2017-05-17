@@ -22,7 +22,7 @@
 #define RM1     29
 #define RM2     31
 #define RM_PWM  3
-#define MOTORSPEED  50
+#define MOTORSPEED  60
 
 // Ultrasound Distance Detector Settings
 #define  trigPin  51    
@@ -32,12 +32,12 @@
 
 
 // Line Follower PID constants
-#define Kp 0.08 // experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
-#define Kd 0.1 // experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
+#define Kp 0.06 // experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
+#define Kd 0.10 // experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
 #define RIGHT_MAX_SPEED 120 // max speed of the robot
 #define LEFT_MAX_SPEED  120// max speed of the robot
-#define RIGHT_BASE_SPEED 50 // this is the speed at which the motors should spin when the robot is perfectly on the line
-#define LEFT_BASE_SPEED 50  // this is the speed at which the motors should spin when the robot is perfectly on the line
+#define RIGHT_BASE_SPEED 50 // previoiusly 50 this is the speed at which the motors should spin when the robot is perfectly on the line
+#define LEFT_BASE_SPEED 50  // previously 50 this is the speed at which the motors should spin when the robot is perfectly on the line
 
 // Initialising motors and QTR(ir) sensor
 QTRSensorsRC qtrrc((unsigned char[]) {22, 24, 26, 28, 30, 32, 34, 36},
@@ -63,17 +63,19 @@ void setup()
   Serial.begin(9600); // set the data rate in bits per second for serial data transmission
   Serial.setTimeout(80);
   Serial1.begin(9600); // set the data rate in bits per second for serial data transmission
-  
+ 
+ 
   qtrrc.calibrate();
   
-  qtrrc.calibratedMinimumOn[0]=1008;
-  qtrrc.calibratedMinimumOn[1]=692;
-  qtrrc.calibratedMinimumOn[2]=588;
-  qtrrc.calibratedMinimumOn[3]=588;
-  qtrrc.calibratedMinimumOn[4]=484;
-  qtrrc.calibratedMinimumOn[5]=488;
-  qtrrc.calibratedMinimumOn[6]=484;
-  qtrrc.calibratedMinimumOn[7]=640;
+  //1360	1036	776	876	676	676	676	876	
+  qtrrc.calibratedMinimumOn[0]=1360;
+  qtrrc.calibratedMinimumOn[1]=1036;
+  qtrrc.calibratedMinimumOn[2]=778;
+  qtrrc.calibratedMinimumOn[3]=876;
+  qtrrc.calibratedMinimumOn[4]=676;
+  qtrrc.calibratedMinimumOn[5]=676;
+  qtrrc.calibratedMinimumOn[6]=676;
+  qtrrc.calibratedMinimumOn[7]=876;
   
   
   for (int i = 0; i < NUM_SENSORS; i++)
@@ -89,6 +91,7 @@ void loop()
 {
   
   if(action=="read") read();
+  else if (action=="readlline") readline();
   else if (action=="calibrate") calibrate();
   else if (action=="f") motor.motorFwd(MOTORSPEED);
   else if (action=="b") motor.motorBack(MOTORSPEED);
@@ -107,6 +110,22 @@ void loop()
 }
 
 void read(){
+  // read raw sensor values
+  qtrrc.read(sensorValues);
+
+  // print the sensor values as numbers from 0 to 2500, where 0 means maximum reflectance and
+  // 2500 means minimum reflectance
+  for (unsigned char i = 0; i < NUM_SENSORS; i++)
+  {
+    Serial.print(sensorValues[i]);
+    Serial.print('\t'); // tab to format the raw data into columns in the Serial monitor
+  }
+  Serial.println();
+  
+  delay(250);
+}
+
+void readline(){
     // read calibrated sensor values and obtain a measure of the line position from 0 to 5000
   // To get raw sensor values, call:
   //  qtrrc.read(sensorValues); instead of unsigned int position = qtrrc.readLine(sensorValues);
@@ -131,9 +150,9 @@ void calibrate(){
   digitalWrite(13, HIGH);    // turn on Arduino's LED to indicate we are in calibration mode
   for (int i = 0; i < 200; i++)  // make the calibration take about 5 seconds
   {
-    if(i<60) motor.motorLeft(50); 
+    if(i<60) motor.motorLeft(65); 
     else if (i>60&&i<140) motor.motorStop(); 
-    else if (i>141&& i<199) motor.motorRight(50);
+    else if (i>141&& i<199) motor.motorRight(65);
     else  motor.motorStop(); //Robot rotates anticlockwise for first 1.5s stops for 2s and rotates clockwise for 1.5s
       
     qtrrc.calibrate();       // reads all sensors 10 times at 2500 us per read (i.e. ~25 ms per call)
@@ -181,12 +200,12 @@ void drive(){
     motor.motorLeft(70);
     debug("lockleft");    
     debugln();
-    delay(200);
+    delay(300);
   } else if (error==3500){
     debug("lockright");
     debugln();
     motor.motorRight(70);
-    delay(200);
+    delay(300);
   } else { 
     motor.motorSlight(leftMotorSpeed,rightMotorSpeed);
   }
@@ -198,7 +217,6 @@ void drive(){
   }
   if(black==8) action="s";
   debugln(position);
-  delay(5);
 }
 
 void detectRange()
@@ -215,19 +233,23 @@ void detectRange()
   // duration is the time (in microseconds) from the sending
   // of the ping to the reception of its echo off of an object.
   pinMode(echoPin, INPUT);
-  duration = pulseIn(echoPin, HIGH);
- 
+  duration = pulseIn(echoPin, HIGH,1750);
+  if(duration==0){
+    cm=30;
+    inches=10;
+  } else{
+    cm = (duration/2) / 29.1;
+    inches = (duration/2) / 74; 
+  }
   // convert the time into a distance
-  cm = (duration/2) / 29.1;
-  inches = (duration/2) / 74; 
   
-  debug(inches);
+  
+  /*debug(inches);
   debug("in, ");
   debug(cm);
   debug("cm");
-  debugln();
+  debugln();*/
   
-  delay(1);
 }
 
 void serialEvent1() {
@@ -252,8 +274,9 @@ void serialEvent() {
     action=Serial.readString();
   }
 }
-//1052 776 632 676 576 576 580 788 
+//1116 788 588 636 528 488 488 636go
+
 
 //2500 2500 2500 2500 2500 2500 2500 2500 
 
-
+//604 692 344 348 244 244 296 344
