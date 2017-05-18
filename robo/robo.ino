@@ -48,7 +48,8 @@ unsigned int sensorValues[NUM_SENSORS];
 String action; // Robot State
 String inputString; // Command builder
 int lastError = 0; //Last Line Following Error
-long duration, cm, inches; //distance detection variables
+long duration, cm; //distance detection variables
+boolean shouldDetect=true;
 
 void setup()
 {
@@ -67,7 +68,8 @@ void setup()
  
   qtrrc.calibrate();
   
-  //956	692	536	640	488	488	536	692	
+  //956	692	536	640	488	488	536	692	go for plus 700
+  
   qtrrc.calibratedMinimumOn[0]=1656;
   qtrrc.calibratedMinimumOn[1]=1392;
   qtrrc.calibratedMinimumOn[2]=1236;
@@ -89,7 +91,6 @@ void setup()
 
 void loop()
 {
-  
   if(action=="read") read();
   else if (action=="readlline") readline();
   else if (action=="calibrate") calibrate();
@@ -101,6 +102,7 @@ void loop()
   else if (action=="go") drive();
   else motor.motorStop();
   
+
   detectRange();
   while(cm<15){
     detectRange();
@@ -182,7 +184,7 @@ void calibrate(){
 
 
 void drive(){
-  unsigned long starting=micros();
+  //unsigned long starting=micros();
   unsigned int position = qtrrc.readLine(sensorValues); // get calibrated readings along with the line position, refer to the QTR Sensors Arduino Library for more details on line position.
   int error = 3500-position;
   //debugln("read timeing");
@@ -201,6 +203,7 @@ void drive(){
   //debugln("xxx");
   //debugln(micros()-starting);
   
+  
   if(error==-3500 ){ // if line is on the left of the robot, stop line detection and rotate to the anti-clockwise for 0.2s
     motor.motorLeft(70);
     debug("lockleft");    
@@ -214,6 +217,7 @@ void drive(){
   } else { 
     motor.motorSlight(leftMotorSpeed,rightMotorSpeed);
   }
+  
   //debugln("read timeing1");
   //debugln(micros()-starting);
   
@@ -223,8 +227,9 @@ void drive(){
     if(sensorValues[i]==1000) black++;
   }
   if(black==8) action="s";
+  
   debugln(position);
-  delay(5);
+  delay(1);
   //debugln("timeing");
   //debugln(micros()-starting);
 }
@@ -247,10 +252,8 @@ void detectRange()
 
   if(duration==0){
     cm=30;
-    inches=10;
   } else{
     cm = (duration/2) / 29.1;
-    inches = (duration/2) / 74; 
   }
 
  
