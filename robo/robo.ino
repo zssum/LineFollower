@@ -32,8 +32,8 @@
 
 
 // Line Follower PID constants
-#define Kp 0.08 // experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
-#define Kd 0.12 // experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
+#define Kp 0.025 // 0.03 prev 0.08 experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
+#define Kd 0.12 // 0.012 experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
 #define RIGHT_MAX_SPEED 130 // previously 120 max speed of the robot
 #define LEFT_MAX_SPEED  130// previously 120 max speed of the robot
 #define RIGHT_BASE_SPEED 70 // previoiusly 60 this is the speed at which the motors should spin when the robot is perfectly on the line
@@ -68,16 +68,17 @@ void setup()
  
   qtrrc.calibrate();
   
-  //956	692	536	640	488	488	536	692	go for plus 700
-  
-  qtrrc.calibratedMinimumOn[0]=1656;
-  qtrrc.calibratedMinimumOn[1]=1392;
-  qtrrc.calibratedMinimumOn[2]=1236;
-  qtrrc.calibratedMinimumOn[3]=1340;
-  qtrrc.calibratedMinimumOn[4]=1188;
-  qtrrc.calibratedMinimumOn[5]=1188;
-  qtrrc.calibratedMinimumOn[6]=1236;
-  qtrrc.calibratedMinimumOn[7]=1392;
+  //824	928	768	720	768	768	768	980		 plus 800	
+ 
+ 
+  qtrrc.calibratedMinimumOn[0]=1624;
+  qtrrc.calibratedMinimumOn[1]=1728;
+  qtrrc.calibratedMinimumOn[2]=1568;
+  qtrrc.calibratedMinimumOn[3]=1520;
+  qtrrc.calibratedMinimumOn[4]=1568;
+  qtrrc.calibratedMinimumOn[5]=1568;
+  qtrrc.calibratedMinimumOn[6]=1568;
+  qtrrc.calibratedMinimumOn[7]=1780;
   
   
   for (int i = 0; i < NUM_SENSORS; i++)
@@ -203,16 +204,15 @@ void drive(){
   //debugln("xxx");
   //debugln(micros()-starting);
   
-  
   if(error==-3500 ){ // if line is on the left of the robot, stop line detection and rotate to the anti-clockwise for 0.2s
-    motor.motorLeft(70);
+    motor.motorLeft(85);
     debug("lockleft");    
     debugln();
     delay(300);
   } else if (error==3500){
     debug("lockright");
     debugln();
-    motor.motorRight(70);
+    motor.motorRight(85);
     delay(300);
   } else { 
     motor.motorSlight(leftMotorSpeed,rightMotorSpeed);
@@ -229,7 +229,7 @@ void drive(){
   if(black==8) action="s";
   
   debugln(position);
-  delay(1);
+  delay(10);
   //debugln("timeing");
   //debugln(micros()-starting);
 }
