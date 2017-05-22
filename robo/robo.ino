@@ -12,7 +12,7 @@
 
 //QTR Settings
 #define NUM_SENSORS   8     // number of sensors used
-#define TIMEOUT       4000  // waits for 2500 microseconds for sensor outputs to go low
+#define TIMEOUT       3500  // waits for 2500 microseconds for sensor outputs to go low
 #define EMITTER_PIN   23     // emitter is controlled by digital pin 23
 
 //Motor Settings
@@ -84,7 +84,7 @@ void setup()
   for (int i = 0; i < NUM_SENSORS; i++)
   {
     //qtrrc.calibratedMaximumOn[i]=600;
-    qtrrc.calibratedMaximumOn[i]=4000;
+    qtrrc.calibratedMaximumOn[i]=3500;
   }
   
 }
@@ -252,12 +252,14 @@ void drive(){
   int black=0;
   for (unsigned char i = 0; i < NUM_SENSORS; i++)
   {    
-    if(sensorValues[i]==1000) black++;
+    if(sensorValues[i]>950) black++;
   }
-  if(black==8) action="pose";
-  
+  if(black==8) {
+    motor.motorStop();
+    action="pose";
+  }
   debugln(position);
-  delay(1);
+  //delay(3);
   //debugln("timeing");
   //debugln(micros()-starting);
 }
