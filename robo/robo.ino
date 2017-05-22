@@ -230,7 +230,7 @@ void drive(){
   //debugln(micros()-starting);
   
   if(error==-3500 ){ // if line is on the left of the robot, stop line detection and rotate to the anti-clockwise for 0.2s
-    motor.motorLeft(50);
+    motor.motorLeft(60);
     debug("lockleft");    
     debugln();
     delay(100);
@@ -238,7 +238,7 @@ void drive(){
   } else if (error==3500){
     debug("lockright");
     debugln();
-    motor.motorRight(50);
+    motor.motorRight(60);
     delay(100);
     go();
   } else { 
