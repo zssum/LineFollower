@@ -125,7 +125,7 @@ void pose(){
   delay(200);
   motor.motorStop();
   delay(200);
-  action="go"
+  action="go";
   
   
 }
