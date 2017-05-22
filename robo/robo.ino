@@ -36,8 +36,8 @@
 #define Kd 0.0 // 0.012 experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
 #define RIGHT_MAX_SPEED 120 // previously 120 max speed of the robot
 #define LEFT_MAX_SPEED  120// previously 120 max speed of the robot
-#define RIGHT_BASE_SPEED 70 // previoiusly 60 this is the speed at which the motors should spin when the robot is perfectly on the line
-#define LEFT_BASE_SPEED 70  // previously 60 this is the speed at which the motors should spin when the robot is perfectly on the line
+#define RIGHT_BASE_SPEED 80 // previoiusly 70 this is the speed at which the motors should spin when the robot is perfectly on the line
+#define LEFT_BASE_SPEED 80  // previously 70 this is the speed at which the motors should spin when the robot is perfectly on the line
 
 // Initialising motors and QTR(ir) sensor
 QTRSensorsRC qtrrc((unsigned char[]) {22, 24, 26, 28, 30, 32, 34, 36},
@@ -68,17 +68,17 @@ void setup()
  
   qtrrc.calibrate();
   
-  //1016	912	912	864	964	964	1016	1340							 plus 1000	
+  //536	536	536	488	536	588	644	800								 plus 1000	
  
  
-  qtrrc.calibratedMinimumOn[0]=2016;
-  qtrrc.calibratedMinimumOn[1]=1912;
-  qtrrc.calibratedMinimumOn[2]=1912;
-  qtrrc.calibratedMinimumOn[3]=1864;
-  qtrrc.calibratedMinimumOn[4]=1964;
-  qtrrc.calibratedMinimumOn[5]=1964;
-  qtrrc.calibratedMinimumOn[6]=2016;
-  qtrrc.calibratedMinimumOn[7]=2340;
+  qtrrc.calibratedMinimumOn[0]=1536;
+  qtrrc.calibratedMinimumOn[1]=1536;
+  qtrrc.calibratedMinimumOn[2]=1536;
+  qtrrc.calibratedMinimumOn[3]=1488;
+  qtrrc.calibratedMinimumOn[4]=1536;
+  qtrrc.calibratedMinimumOn[5]=1588;
+  qtrrc.calibratedMinimumOn[6]=1644;
+  qtrrc.calibratedMinimumOn[7]=1800;
   
   
   for (int i = 0; i < NUM_SENSORS; i++)
@@ -102,6 +102,7 @@ void loop()
   else if (action=="s") motor.motorStop();
   else if (action=="go") go();
   else if (action=="d") drive();
+  else if (action=="pose") pose();
   else motor.motorStop();
   
 
@@ -113,6 +114,21 @@ void loop()
   }
 }
 
+void pose(){
+  motor.motorStop();
+  delay(500);
+  motor.motorLeft(50);
+  delay(200);
+  motor.motorStop();
+  delay(200);
+  motor.motorRight(50);
+  delay(200);
+  motor.motorStop();
+  delay(200);
+  action="go"
+  
+  
+}
 void read(){
   // read raw sensor values
   qtrrc.read(sensorValues);
@@ -217,13 +233,13 @@ void drive(){
     motor.motorLeft(50);
     debug("lockleft");    
     debugln();
-    delay(300);
+    delay(100);
     go();
   } else if (error==3500){
     debug("lockright");
     debugln();
     motor.motorRight(50);
-    delay(300);
+    delay(100);
     go();
   } else { 
     analogWrite(LM_PWM,leftMotorSpeed);
@@ -238,7 +254,7 @@ void drive(){
   {    
     if(sensorValues[i]==1000) black++;
   }
-  if(black==8) action="s";
+  if(black==8) action="pose";
   
   debugln(position);
   delay(1);
