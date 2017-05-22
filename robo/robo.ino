@@ -12,7 +12,7 @@
 
 //QTR Settings
 #define NUM_SENSORS   8     // number of sensors used
-#define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low
+#define TIMEOUT       4000  // waits for 2500 microseconds for sensor outputs to go low
 #define EMITTER_PIN   23     // emitter is controlled by digital pin 23
 
 //Motor Settings
@@ -32,10 +32,10 @@
 
 
 // Line Follower PID constants
-#define Kp 0.025 // 0.03 prev 0.08 experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
-#define Kd 0.12 // 0.012 experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
-#define RIGHT_MAX_SPEED 130 // previously 120 max speed of the robot
-#define LEFT_MAX_SPEED  130// previously 120 max speed of the robot
+#define Kp 0.02 // 0.03 prev 0.08 experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
+#define Kd 0.0 // 0.012 experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
+#define RIGHT_MAX_SPEED 120 // previously 120 max speed of the robot
+#define LEFT_MAX_SPEED  120// previously 120 max speed of the robot
 #define RIGHT_BASE_SPEED 70 // previoiusly 60 this is the speed at which the motors should spin when the robot is perfectly on the line
 #define LEFT_BASE_SPEED 70  // previously 60 this is the speed at which the motors should spin when the robot is perfectly on the line
 
@@ -68,23 +68,23 @@ void setup()
  
   qtrrc.calibrate();
   
-  //824	928	768	720	768	768	768	980		 plus 800	
+  //1016	912	912	864	964	964	1016	1340							 plus 1000	
  
  
-  qtrrc.calibratedMinimumOn[0]=1624;
-  qtrrc.calibratedMinimumOn[1]=1728;
-  qtrrc.calibratedMinimumOn[2]=1568;
-  qtrrc.calibratedMinimumOn[3]=1520;
-  qtrrc.calibratedMinimumOn[4]=1568;
-  qtrrc.calibratedMinimumOn[5]=1568;
-  qtrrc.calibratedMinimumOn[6]=1568;
-  qtrrc.calibratedMinimumOn[7]=1780;
+  qtrrc.calibratedMinimumOn[0]=2016;
+  qtrrc.calibratedMinimumOn[1]=1912;
+  qtrrc.calibratedMinimumOn[2]=1912;
+  qtrrc.calibratedMinimumOn[3]=1864;
+  qtrrc.calibratedMinimumOn[4]=1964;
+  qtrrc.calibratedMinimumOn[5]=1964;
+  qtrrc.calibratedMinimumOn[6]=2016;
+  qtrrc.calibratedMinimumOn[7]=2340;
   
   
   for (int i = 0; i < NUM_SENSORS; i++)
   {
     //qtrrc.calibratedMaximumOn[i]=600;
-    qtrrc.calibratedMaximumOn[i]=2500;
+    qtrrc.calibratedMaximumOn[i]=4000;
   }
   
 }
@@ -100,7 +100,8 @@ void loop()
   else if (action=="l") motor.motorLeft(MOTORSPEED);
   else if (action=="r") motor.motorRight(MOTORSPEED);
   else if (action=="s") motor.motorStop();
-  else if (action=="go") drive();
+  else if (action=="go") go();
+  else if (action=="d") drive();
   else motor.motorStop();
   
 
@@ -182,7 +183,15 @@ void calibrate(){
   action= "s";
 }
 
-
+void go(){
+  analogWrite(LM_PWM,0);
+  digitalWrite(LM1,HIGH);
+  digitalWrite(LM2,LOW);
+  analogWrite(RM_PWM,0);
+  digitalWrite(RM1,HIGH);
+  digitalWrite(RM2,LOW);
+  action="d";
+}
 
 void drive(){
   //unsigned long starting=micros();
@@ -205,19 +214,22 @@ void drive(){
   //debugln(micros()-starting);
   
   if(error==-3500 ){ // if line is on the left of the robot, stop line detection and rotate to the anti-clockwise for 0.2s
-    motor.motorLeft(85);
+    motor.motorLeft(50);
     debug("lockleft");    
     debugln();
     delay(300);
+    go();
   } else if (error==3500){
     debug("lockright");
     debugln();
-    motor.motorRight(85);
+    motor.motorRight(50);
     delay(300);
+    go();
   } else { 
-    motor.motorSlight(leftMotorSpeed,rightMotorSpeed);
+    analogWrite(LM_PWM,leftMotorSpeed);
+    analogWrite(RM_PWM,rightMotorSpeed);
   }
-  
+    
   //debugln("read timeing1");
   //debugln(micros()-starting);
   
@@ -229,7 +241,7 @@ void drive(){
   if(black==8) action="s";
   
   debugln(position);
-  delay(10);
+  delay(1);
   //debugln("timeing");
   //debugln(micros()-starting);
 }
@@ -297,3 +309,4 @@ void serialEvent() {
 //2500 2500 2500 2500 2500 2500 2500 2500 
 
 //604 692 344 348 244 244 296 344
+
