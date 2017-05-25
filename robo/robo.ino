@@ -90,10 +90,10 @@ void loop()
   else if (action=="select") selectSpeed();
   else if (action=="readline") readline();
   else if (action=="calibrate") calibrate();
-  else if (action=="f") motor.motorFwd(speedSelected);
-  else if (action=="b") motor.motorBack(speedSelected);
-  else if (action=="l") motor.motorLeft(speedSelected);
-  else if (action=="r") motor.motorRight(speedSelected);
+  else if (action=="f") motor.motorFwd(60);
+  else if (action=="b") motor.motorBack(60);
+  else if (action=="l") motor.motorLeft(60);
+  else if (action=="r") motor.motorRight(60);
   else if (action=="s") motor.motorStop();
   else if (action=="go") go();
   else if (action=="d") drive();
@@ -127,7 +127,7 @@ void selectSpeed(){
       if (inChar == '+') {
         speedSelecting++;
         jerk();
-        if(speedSelecting==6){
+        if(speedSelecting==5){
           done=true;
           digitalWrite(13,LOW);
           delay(500);
