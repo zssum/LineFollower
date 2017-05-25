@@ -127,7 +127,7 @@ void selectSpeed(){
       if (inChar == '+') {
         speedSelecting++;
         jerk();
-        if(speedSelecting==4){
+        if(speedSelecting==6){
           done=true;
           digitalWrite(13,LOW);
           delay(500);
@@ -261,14 +261,14 @@ void drive(){
   if(error==-2500 ){ // if line is on the left of the robot, stop line detection and rotate anti-clockwise until line is at the center before moving off
     //delay(40);
     for(int i=1;i<6;i++){
-      analogWrite(LM_PWM,leftMotorSpeed/i);
-      analogWrite(RM_PWM,rightMotorSpeed/i);
+      analogWrite(LM_PWM,leftMotorSpeed/2^i);
+      analogWrite(RM_PWM,rightMotorSpeed/2^i);
       delay(10);
     }
     motor.motorStop();
-    delay(50);
+    //delay(50);
     while(error<0){
-      motor.motorLeft(70);
+      motor.motorLeft(80);
       error = 2500-qtrrc.readLine(sensorValues);      
     }
     motor.motorStop();
@@ -280,14 +280,14 @@ void drive(){
   } else if (error==2500){
     //delay(40);
     for(int i=1;i<6;i++){
-      analogWrite(LM_PWM,leftMotorSpeed/i);
-      analogWrite(RM_PWM,rightMotorSpeed/i);
+      analogWrite(LM_PWM,leftMotorSpeed/2^i);
+      analogWrite(RM_PWM,rightMotorSpeed/2^i);
       delay(10);
     }
     motor.motorStop();
-    delay(50);
+    //delay(50);
     while(error>0){
-      motor.motorRight(70);
+      motor.motorRight(80);
       error = 2500-qtrrc.readLine(sensorValues);
     }
     motor.motorStop();
@@ -301,8 +301,9 @@ void drive(){
       for(int i=5; i>0;i--){
         analogWrite(LM_PWM,leftMotorSpeed/i);
         analogWrite(RM_PWM,rightMotorSpeed/i);
-        delay(40);
+        delay(10);
       }
+      isLaunchFromStop=false;
     } else{
       analogWrite(LM_PWM,leftMotorSpeed);
       analogWrite(RM_PWM,rightMotorSpeed);
@@ -319,7 +320,13 @@ void drive(){
     if(sensorValues[i]>950) black++;
   }
   if(black==NUM_SENSORS) {
+    for(int i=1;i<6;i++){
+      analogWrite(LM_PWM,leftMotorSpeed/2^i);
+      analogWrite(RM_PWM,rightMotorSpeed/2^i);
+      delay(10);
+    }
     motor.motorStop();
+    isLaunchFromStop=true;
     action="pose";
   }
   debugln(position);
