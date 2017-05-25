@@ -5,7 +5,7 @@
 
 class Motor{
     public:
-    	Motor(int lm1, int lm2, int lm_pwm, int rm1, int rm2, int rm_pwm, int motorspeed);
+    	Motor(int lm1, int lm2, int lm_pwm, int rm1, int rm2, int rm_pwm);
     	void motorFwd(int motorspeed);
 		void motorBack(int motorspeed);
 		void motorLeft(int motorspeed);
@@ -19,7 +19,6 @@ class Motor{
 		int m_rm1;
 		int m_rm2;
 		int m_rm_pwm;
-		int m_motorspeed;
 
   };
    
