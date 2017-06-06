@@ -14,7 +14,7 @@
 
 //IR sensor Settings
 #define NUM_SENSORS   6     // number of sensors used
-#define TIMEOUT       6000  // waits for 4500 microseconds for sensor outputs to go low (Adjust higher for better sensitivity to offset increased distance between floor and sensor)
+#define TIMEOUT       4500  // waits for 4500 microseconds for sensor outputs to go low (Adjust higher for better sensitivity to offset increased distance between floor and sensor)
 #define EMITTER_PIN   23    // emitter is controlled by digital pin 23
 
 //Motor Settings
@@ -100,7 +100,7 @@ void setup()
   
   for (int i = 0; i < NUM_SENSORS; i++)
   {
-    qtrrc.calibratedMaximumOn[i]=6000;
+    qtrrc.calibratedMaximumOn[i]=4500;
   }
   
 }
@@ -114,8 +114,8 @@ void loop()
   else if (action=="calibrate") calibrate();
   else if (action=="f") motor.motorFwd(40);
   else if (action=="b") motor.motorBack(40);
-  else if (action=="l") motor.motorLeft(40);
-  else if (action=="r") motor.motorRight(40);
+  else if (action=="l") motor.motorLeft(60);
+  else if (action=="r") motor.motorRight(60);
   else if (action=="s") motor.motorStop();
   else if (action=="go") go();
   else if (action=="d") drive();
@@ -283,24 +283,22 @@ void drive(){
   
   
   if(error==-2500 ){ // if line is on the left of the robot, stop line detection and rotate anti-clockwise until line is at the center before moving off
-    dampedStop(leftMotorSpeed,rightMotorSpeed);
     while(error<0){
-      motor.motorLeft(50);
+      motor.motorLeft(60);
       error = 2500-qtrrc.readLine(sensorValues);      
     }
     motor.motorStop();
-    delay(20);
+    delay(100);
     debug("lockleft");    
     debugln();
     go();
   } else if (error==2500){  // otherwise if line is on the right, vice versa
-    dampedStop(leftMotorSpeed,rightMotorSpeed);
     while(error>0){
-      motor.motorRight(50);
+      motor.motorRight(60);
       error = 2500-qtrrc.readLine(sensorValues);
     }
     motor.motorStop();
-    delay(20);
+    delay(100);
     debug("lockleft");    
     debugln();
     go();
