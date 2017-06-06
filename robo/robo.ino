@@ -12,7 +12,7 @@
 
 //IR sensor Settings
 #define NUM_SENSORS   6     // number of sensors used
-#define TIMEOUT       4500  // waits for 4500 microseconds for sensor outputs to go low (Adjust higher for better sensitivity to offset increased distance between floor and sensor)
+#define TIMEOUT       6000  // waits for 4500 microseconds for sensor outputs to go low (Adjust higher for better sensitivity to offset increased distance between floor and sensor)
 #define EMITTER_PIN   23    // emitter is controlled by digital pin 23
 
 //Motor Settings
@@ -36,7 +36,7 @@ QTRSensorsRC qtrrc((unsigned char[]) {24, 26, 28, 30, 32, 34},
 Motor motor(LM1, LM2, LM_PWM, RM1, RM2, RM_PWM);
 
 int speedSelected=70; //Inital speed 
-float Kp=0.035; // LineFollower proportional constant
+float Kp=0.025; // LineFollower proportional constant changed from 0.035
 float Kd=0; // LineFollower differential consstant (not in use)
 int lastError = 0; // LineFollower's lastError (not in use)
 unsigned int sensorValues[NUM_SENSORS]; //IR Sensor values
@@ -78,7 +78,7 @@ void setup()
   
   for (int i = 0; i < NUM_SENSORS; i++)
   {
-    qtrrc.calibratedMaximumOn[i]=4500;
+    qtrrc.calibratedMaximumOn[i]=6000;
   }
   
 }
@@ -90,11 +90,36 @@ void loop()
   else if (action=="select") selectSpeed();
   else if (action=="readline") readline();
   else if (action=="calibrate") calibrate();
-  else if (action=="f") motor.motorFwd(60);
-  else if (action=="b") motor.motorBack(60);
+  else if (action=="f") {
+    if(isLaunchFromStop){
+      isLaunchFromStop=false;
+      for(int i=1; i<9;i++){
+      motor.motorFwd(i*10);
+      delay(15);
+      }
+    } else motor.motorFwd(80);
+    
+  }
+  else if (action=="b") {
+    for(int i=1; i<7;i++){
+      motor.motorBack(i*10);
+      delay(15);
+    }
+  }
   else if (action=="l") motor.motorLeft(60);
   else if (action=="r") motor.motorRight(60);
-  else if (action=="s") motor.motorStop();
+  else if (action=="s") {
+    if(!isLaunchFromStop){
+      isLaunchFromStop= true;
+      for(int i=1;i<8;i++){
+      motor.motorFwd(80*(2/3)^i);
+      delay(15);
+      }
+      motor.motorStop();
+    }else  motor.motorStop();
+    
+   
+  }
   else if (action=="go") go();
   else if (action=="d") drive();
   else if (action=="pose") pose(); //TODO: tapCard() 
@@ -259,45 +284,29 @@ void drive(){
   
   
   if(error==-2500 ){ // if line is on the left of the robot, stop line detection and rotate anti-clockwise until line is at the center before moving off
-    //delay(40);
-    for(int i=1;i<6;i++){
-      analogWrite(LM_PWM,leftMotorSpeed/2^i);
-      analogWrite(RM_PWM,rightMotorSpeed/2^i);
-      delay(10);
-    }
-    motor.motorStop();
-    //delay(50);
+    dampedStop(leftMotorSpeed,rightMotorSpeed);
     while(error<0){
       motor.motorLeft(80);
       error = 2500-qtrrc.readLine(sensorValues);      
     }
     motor.motorStop();
-    isLaunchFromStop=true;
-    delay(50);
+    delay(20);
     debug("lockleft");    
     debugln();
     go();
-  } else if (error==2500){
-    //delay(40);
-    for(int i=1;i<6;i++){
-      analogWrite(LM_PWM,leftMotorSpeed/2^i);
-      analogWrite(RM_PWM,rightMotorSpeed/2^i);
-      delay(10);
-    }
-    motor.motorStop();
-    //delay(50);
+  } else if (error==2500){  // otherwise if line is on the right, vice versa
+    dampedStop(leftMotorSpeed,rightMotorSpeed);
     while(error>0){
       motor.motorRight(80);
       error = 2500-qtrrc.readLine(sensorValues);
     }
     motor.motorStop();
-    isLaunchFromStop=true;
-    delay(50);
+    delay(20);
     debug("lockleft");    
     debugln();
     go();
-  } else { 
-    if(isLaunchFromStop){
+  } else { // speed correction when robot is on the line
+    if(isLaunchFromStop){ //damped acceleration if robot is moving from a stop
       for(int i=5; i>0;i--){
         analogWrite(LM_PWM,leftMotorSpeed/i);
         analogWrite(RM_PWM,rightMotorSpeed/i);
@@ -310,27 +319,19 @@ void drive(){
     }    
   }
 
-  
-  //debugln("read timeing1");
-  //debugln(micros()-starting);
-  
+  //Checking for all black signal
   int black=0;
   for (unsigned char i = 0; i < NUM_SENSORS; i++)
   {    
     if(sensorValues[i]>950) black++;
   }
-  if(black==NUM_SENSORS) {
-    for(int i=1;i<6;i++){
-      analogWrite(LM_PWM,leftMotorSpeed/2^i);
-      analogWrite(RM_PWM,rightMotorSpeed/2^i);
-      delay(10);
-    }
-    motor.motorStop();
-    isLaunchFromStop=true;
-    action="pose";
+  //If all black signal, stop and tap card
+  if(black==NUM_SENSORS) { 
+    dampedStop(leftMotorSpeed,rightMotorSpeed);
+    action="pose"; //TODO: card tapping
   }
   debugln(position);
-  delay(2); // stabilise robot
+  delay(1); // stabilise robot
   
 }
 
@@ -373,6 +374,16 @@ void jerk(){
     delay(200);
     motor.motorStop();
     delay(200);
+}
+
+void dampedStop(int lms, int rms){
+  for(int i=1;i<6;i++){
+      analogWrite(LM_PWM,lms/2^i);
+      analogWrite(RM_PWM,rms/2^i);
+      delay(10);
+    }
+  motor.motorStop();
+  isLaunchFromStop=true;
 }
 
 //Bluetooth Serial interrupt
