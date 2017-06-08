@@ -14,8 +14,10 @@
 MDNSResponder mdns;
 
 // Replace with your network credentials
-const char* ssid = "LAPTOP-7N2NRTRM 3678";
-const char* password = "aaa12345";
+//const char* ssid = "LAPTOP-7N2NRTRM 3678";
+//const char* password = "aaa12345";
+const char* ssid = "MyPi";
+const char* password = "raspberry";
 
 ESP8266WebServer server(80);
 

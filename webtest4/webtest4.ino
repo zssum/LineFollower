@@ -10,11 +10,15 @@
 
 String state="";
 
-ESP8266WiFiMulti WiFiMulti;
+//const char* ssid = "LAPTOP-7N2NRTRM 3678";
+//const char* password = "aaa12345";
+
+const char* ssid = "MyPi";
+const char* password = "raspberry";
 
 void setup() {
     pinMode(LED,OUTPUT);
-    digitalWrite(LED,LOW);
+    digitalWrite(LED,HIGH);
     USE_SERIAL.begin(115200);
    // USE_SERIAL.setDebugOutput(true);
 
@@ -28,18 +32,22 @@ void setup() {
         delay(1000);
     }
 
-    WiFiMulti.addAP("LAPTOP-7N2NRTRM 3678", "aaa12345");
+    WiFi.begin(ssid, password);
 
-    while(WiFiMulti.run() != WL_CONNECTED){
-      delay(500);
+    while(WiFi.status() != WL_CONNECTED){
+      WiFi.disconnect();
+      delay(3000);
+      WiFi.begin(ssid, password);
+      delay(7000);
+      Serial.print(".");
     }
-    digitalWrite(LED,HIGH);
-
+    digitalWrite(LED,LOW);
 }
 
 void loop() {
-  while(Serial.available()){
-    state=Serial.readString();
+  while(USE_SERIAL.available()){
+    state=USE_SERIAL.readString();
+    USE_SERIAL.println(state);
     if (state=="checkGate1") checkGate1();
     else if(state=="checkGate2") checkGate2();
   }
@@ -50,7 +58,7 @@ void loop() {
 
 void checkGate1(){
         HTTPClient http;
-        http.begin("http://192.168.137.210/1");
+        http.begin("http://192.168.42.101/1");
  
         int httpCode = http.GET();
         if(httpCode == HTTP_CODE_OK)
@@ -72,7 +80,7 @@ void checkGate1(){
 
 void checkGate2(){
         HTTPClient http;
-        http.begin("http://192.168.137.210/2");
+        http.begin("http://192.168.42.101/2");
  
         int httpCode = http.GET();
         if(httpCode == HTTP_CODE_OK)

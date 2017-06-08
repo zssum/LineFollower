@@ -44,7 +44,7 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 uint8_t servonum = 0;// tapper is attached to channel 0 out of 16 of the pwm controlboard
 
 
-int speedSelected=40; //Inital speed 
+int speedSelected=35; //Inital speed 
 float Kp=0.035; // LineFollower proportional constant
 float Kd=0; // LineFollower differential consstant (not in use)
 int lastError = 0; // LineFollower's lastError (not in use)
@@ -121,17 +121,19 @@ void loop()
   else if (action=="d") drive();
   else if (action=="pose") pose(); //TODO: tapCard() 
   else if (action=="t") toggleTapper();
+  else if (action=="tap") tapCard();
   else motor.motorStop();
   
   //Ensures robot will brake if an object is in front
   //The robot will continue to move if the obstacle is removed  
+  /*
   detectRange(); 
   while(cm<25){
     detectRange();
     motor.motorStop();
     debugln("object in front");
     Serial.println("object in front");
-  }
+  }*/
 }
 
 
@@ -330,7 +332,7 @@ void drive(){
     }
     motor.motorStop();
     isLaunchFromStop=true;
-    action="s";
+    action="tap";
   }
   debugln(position);
   delay(1); // stabilise robot
@@ -365,6 +367,30 @@ void detectRange()
   debugln();
 }
 
+bool isGateOpen()
+{
+  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
+  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(5);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+ 
+  // Read the signal from the sensor: a HIGH pulse whose
+  // duration is the time (in microseconds) from the sending
+  // of the ping to the reception of its echo off of an object.
+  pinMode(echoPin, INPUT);
+  duration = pulseIn(echoPin, HIGH); //Time out set at 1750 to increase the performance of detection at the expense of detection range
+
+  cm = (duration/2) / 29.1; //calculation of distance with speed of sound
+  Serial.print(cm);
+  Serial.print("cm");
+  Serial.println();
+  if(cm>110) return true;
+  else return false;
+}
+
 //Movement to give feedback and information to user when controlling robot
 void jerk(){
   if(directionTogg){
@@ -378,24 +404,41 @@ void jerk(){
     delay(200);
 }
 
+void tapCard(){
+  bool goodToGo=false;
+  toggleTapper();
+  delay(500);
+  toggleTapper();
+  while(!goodToGo){
+    int checkNumber=0;
+    for (int i=0;i<10;i++){
+    if(isGateOpen()) checkNumber++;
+    else break;
+    }
+    if (checkNumber==10) goodToGo=true; 
+  }
+  Serial.println("lets go");
+  action="go";
+}
+
 
 //tap or untap tapper
 void toggleTapper(){
   if (tapped){
-    for (int i=400;i<=550;i++)
+    for (int i=420;i<=510;i++)
     {
       pwm.setPWM(servonum, 0, i);
       delay(5);
     }
-    delay(200);
+    delay(100);
     pwm.setPWM(servonum, 0, 0);
   } else{
-    for (int i=550;i>=400;i--)
+    for (int i=510;i>=420;i--)
     {
       pwm.setPWM(servonum, 0, i);
       delay(5);
     }
-    delay(200);
+    delay(100);
     pwm.setPWM(servonum, 0, 0);
   }
   tapped=!tapped;
