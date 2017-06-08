@@ -44,7 +44,7 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 uint8_t servonum = 0;// tapper is attached to channel 0 out of 16 of the pwm controlboard
 
 
-int speedSelected=35; //Inital speed 
+int speedSelected=40; //Inital speed 
 float Kp=0.035; // LineFollower proportional constant
 float Kd=0; // LineFollower differential consstant (not in use)
 int lastError = 0; // LineFollower's lastError (not in use)
@@ -126,14 +126,14 @@ void loop()
   
   //Ensures robot will brake if an object is in front
   //The robot will continue to move if the obstacle is removed  
-  /*
+  
   detectRange(); 
   while(cm<25){
     detectRange();
     motor.motorStop();
     debugln("object in front");
     Serial.println("object in front");
-  }*/
+  }
 }
 
 
@@ -285,8 +285,8 @@ void drive(){
   
   
   if(error==-2500 ){ // if line is on the left of the robot, stop line detection and rotate anti-clockwise until line is at the center before moving off
-    while(error<0){
-      motor.motorLeft(60);
+    while(error<-1000){
+      motor.motorLeft(65);
       error = 2500-qtrrc.readLine(sensorValues);      
     }
     motor.motorStop();
@@ -295,8 +295,8 @@ void drive(){
     debugln();
     go();
   } else if (error==2500){  // otherwise if line is on the right, vice versa
-    while(error>0){
-      motor.motorRight(60);
+    while(error>1000){
+      motor.motorRight(65);
       error = 2500-qtrrc.readLine(sensorValues);
     }
     motor.motorStop();
@@ -381,9 +381,10 @@ bool isGateOpen()
   // duration is the time (in microseconds) from the sending
   // of the ping to the reception of its echo off of an object.
   pinMode(echoPin, INPUT);
-  duration = pulseIn(echoPin, HIGH); //Time out set at 1750 to increase the performance of detection at the expense of detection range
+  duration = pulseIn(echoPin, HIGH,8730); //Time out set at 1750 to increase the performance of detection at the expense of detection range
 
-  cm = (duration/2) / 29.1; //calculation of distance with speed of sound
+  if (duration==0) cm= 150;
+  else cm = (duration/2) / 29.1; //calculation of distance with speed of sound
   Serial.print(cm);
   Serial.print("cm");
   Serial.println();
@@ -405,6 +406,7 @@ void jerk(){
 }
 
 void tapCard(){
+  delay(2500);//bypass 10s
   bool goodToGo=false;
   toggleTapper();
   delay(500);
