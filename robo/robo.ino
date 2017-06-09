@@ -409,8 +409,6 @@ void tapCard(){
   delay(2500);//bypass 10s
   bool goodToGo=false;
   toggleTapper();
-  delay(500);
-  toggleTapper();
   while(!goodToGo){
     int checkNumber=0;
     for (int i=0;i<10;i++){
@@ -419,8 +417,13 @@ void tapCard(){
     }
     if (checkNumber==10) goodToGo=true; 
   }
+  go();
+  drive();
   Serial.println("lets go");
   action="go";
+  toggleTapper();
+  
+  
 }
 
 
