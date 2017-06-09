@@ -406,7 +406,7 @@ void jerk(){
 }
 
 void tapCard(){
-  delay(2500);//bypass 10s
+  //delay(3500);//bypass 10s
   bool goodToGo=false;
   toggleTapper();
   while(!goodToGo){
@@ -417,8 +417,13 @@ void tapCard(){
     }
     if (checkNumber==10) goodToGo=true; 
   }
-  go();
-  drive();
+  analogWrite(LM_PWM,35);
+  digitalWrite(LM1,HIGH);
+  digitalWrite(LM2,LOW);
+  analogWrite(RM_PWM,35);
+  digitalWrite(RM1,HIGH);
+  digitalWrite(RM2,LOW);
+  
   Serial.println("lets go");
   action="go";
   toggleTapper();
@@ -433,21 +438,21 @@ void toggleTapper(){
     for (int i=420;i<=510;i++)
     {
       pwm.setPWM(servonum, 0, i);
-      delay(5);
+      delay(1);
     }
-    delay(100);
+    delay(50);
     pwm.setPWM(servonum, 0, 0);
   } else{
-    for (int i=510;i>=420;i--)
+    pwm.setPWM(servonum, 0, 400);
+    /*for (int i=510;i>=420;i--)
     {
       pwm.setPWM(servonum, 0, i);
       delay(5);
-    }
-    delay(100);
-    pwm.setPWM(servonum, 0, 0);
+    }*/
+    delay(50);
+    //pwm.setPWM(servonum, 0, 0);
   }
   tapped=!tapped;
-  action="s";
 }
 
 //Bluetooth Serial interrupt
