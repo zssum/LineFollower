@@ -46,8 +46,6 @@ uint8_t servonum = 0;// tapper is attached to channel 0 out of 16 of the pwm con
 
 int speedSelected=40; //Inital speed 
 float Kp=0.035; // LineFollower proportional constant
-float Kd=0; // LineFollower differential consstant (not in use)
-int lastError = 0; // LineFollower's lastError (not in use)
 unsigned int sensorValues[NUM_SENSORS]; //IR Sensor values
 
 
@@ -58,6 +56,8 @@ String inputString; // Command builder for serial strings
 boolean directionTogg=true; // Toggle between clockwise and anti-clockwise rotation movements as a feedback to user
 boolean isLaunchFromStop=true; // Used to soften acceleration if robot is launching from rest 
 boolean tapped=false; //tapper state
+int skipStop=0;
+int seq=0;
 
 void setup()
 {
@@ -325,14 +325,26 @@ void drive(){
     if(sensorValues[i]>950) black++;
   }
   if(black==NUM_SENSORS) {
-    for(int i=1;i<6;i++){
+    if(skipStop==0){
+      for(int i=1;i<6;i++){
       analogWrite(LM_PWM,leftMotorSpeed/2^i);
       analogWrite(RM_PWM,rightMotorSpeed/2^i);
       delay(10);
+      }
+      motor.motorStop();
+      isLaunchFromStop=true;
+      action="s";
+      if(seq==2){
+        skipStop=0;
+        seq=0;
+      }else{
+        seq++;
+        skipStop=3;
+      }
+    } else{
+      delay(100);
+      skipStop--;
     }
-    motor.motorStop();
-    isLaunchFromStop=true;
-    action="tap";
   }
   debugln(position);
   delay(1); // stabilise robot
@@ -381,9 +393,9 @@ bool isGateOpen()
   // duration is the time (in microseconds) from the sending
   // of the ping to the reception of its echo off of an object.
   pinMode(echoPin, INPUT);
-  duration = pulseIn(echoPin, HIGH,8730); //Time out set at 1750 to increase the performance of detection at the expense of detection range
+  duration = pulseIn(echoPin, HIGH,8730); //Time out set at 8730micros to increase the performance of detection at the expense of detection range
 
-  if (duration==0) cm= 150;
+  if (duration==0) cm= 150; // If nothing is detected within 8730micros, all-clear 150cm in front of the robot
   else cm = (duration/2) / 29.1; //calculation of distance with speed of sound
   Serial.print(cm);
   Serial.print("cm");
