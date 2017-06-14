@@ -1,5 +1,6 @@
 #include <QTRSensors.h>
 #include "motor.h"
+#include "distSensor.h"
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 
@@ -22,7 +23,7 @@
 #define LM2     35
 #define LM_PWM  2 
 #define L_GND   37 // TODO: check which todelete
-#define L_5V    39 // TODO: check which todelete
+#define L_5V    39 // TODO: check which todelete  delete left
 #define RM1     25
 #define RM2     27
 #define RM_PWM  3
@@ -38,19 +39,18 @@
 
 #define servonum  0 // tapper is attached to channel 0 out of 16 of the pwm controlboard
 
-// Initialising motors and QTR(ir) sensor and tapper
+// Initialising motors and QTR(ir) sensor, tapper and distance sensor
 QTRSensorsRC qtrrc((unsigned char[]) {24, 26, 28, 30, 32, 34},
   NUM_SENSORS, TIMEOUT, EMITTER_PIN); 
 Motor motor(LM1, LM2, LM_PWM, RM1, RM2, RM_PWM);
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+DistSensor distSensor(trigPin, echoPin, sonicVcc, sonicGnd);
 
 #define INITIAL_SPEED 40
 int speedSelected= INITIAL_SPEED; //Inital speed 
 float Kp=0.035; // LineFollower proportional constant
 unsigned int sensorValues[NUM_SENSORS]; //IR Sensor values
 
-
-long duration, cm; //distance detection variables
 String action; // Robot's state
 String inputString; // Command builder for serial strings
 boolean directionTogg=true; // Toggle between clockwise and anti-clockwise rotation movements as a feedback to user
@@ -60,12 +60,6 @@ boolean tapped=false; //tapper state
 void setup()
 {
   pinMode(13, OUTPUT); //Arduino LED
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
-  pinMode(sonicVcc,OUTPUT);
-  pinMode(sonicGnd, OUTPUT);
-  digitalWrite(sonicVcc,HIGH);
-  digitalWrite(sonicGnd,LOW);
   
   pinMode(R_GND,OUTPUT);
   pinMode(R_5V, OUTPUT);
@@ -82,7 +76,7 @@ void setup()
   //tapper initialisation
   pwm.begin();
   pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
-  pwm.setPWM(servonum, 0, 0); // Turn off servo
+  pwm.setPWM(servonum, 0, 420); // Raise arm up
  
  
   qtrrc.calibrate();
@@ -111,23 +105,32 @@ void loop()
   else if (action=="select") selectSpeed();  
   else if (action=="go") go(); // Switching the motors in the forward direction before moving on to the main robot program
   else if (action=="d") drive(); // Main robot program
+  else if (action=="tap") tapCard();
   // Manual control of the movement of the robot
   else if (action=="f") motor.motorFwd(40);
   else if (action=="b") motor.motorBack(40);
   else if (action=="l") motor.motorLeft(60); // Rotate Anti-Clockwise
   else if (action=="r") motor.motorRight(60); //Rotate Clockwise
   else if (action=="s") motor.motorStop();
+  else if (action=="check") {
+    Serial.println(distSensor.rangeIsClear(150)); 
+    Serial.print(distSensor.cm);
+    Serial.print("cm");
+    Serial.println();
+  }
   else motor.motorStop();
   
   //Ensures robot will brake if an object is in front
   //The robot will continue to move if the obstacle is removed   
-  detectRange(); 
-  while(cm<25){
-    detectRange();
+
+  /*
+  while(!distSensor.rangeIsClear(30)){  //TODO: check logic if it restarts
     motor.motorStop();
     debugln("object in front");
     Serial.println("object in front");
-  }
+    Serial.println(distSensor.cm);
+    Serial.println("cm");
+  }*/
 }
 
 
@@ -315,58 +318,6 @@ void drive(){
   
 }
 
-void detectRange()
-{
-  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(5);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
- 
-  // Read the signal from the sensor: a HIGH pulse whose
-  // duration is the time (in microseconds) from the sending
-  // of the ping to the reception of its echo off of an object.
-  pinMode(echoPin, INPUT);
-  duration = pulseIn(echoPin, HIGH,1750); //Time out set at 1750 to increase the performance of detection at the expense of detection range
-
-  if(duration==0){
-    cm=30; // On timeout and no detection, objects are at least 30cm away from the distance sensor
-  } else{
-    cm = (duration/2) / 29.1; //calculation of distance with speed of sound
-  } 
-  debug(inches);
-  debug("in, ");
-  debug(cm);
-  debug("cm");
-  debugln();
-}
-
-bool isGateOpen()
-{
-  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(5);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
- 
-  // Read the signal from the sensor: a HIGH pulse whose
-  // duration is the time (in microseconds) from the sending
-  // of the ping to the reception of its echo off of an object.
-  pinMode(echoPin, INPUT);
-  duration = pulseIn(echoPin, HIGH,8730); //Time out set at 8730micros to increase the performance of detection at the expense of detection range
-
-  if (duration==0) cm= 150; // If nothing is detected within 8730micros, all-clear 150cm in front of the robot
-  else cm = (duration/2) / 29.1; //calculation of distance with speed of sound
-  Serial.print(cm);
-  Serial.print("cm");
-  Serial.println();
-  if(cm>110) return true;
-  else return false;
-}
 
 //Movement to give feedback and information to user when controlling robot
 void jerk(){
@@ -384,14 +335,14 @@ void jerk(){
 void tapCard(){
   //delay(3500);//bypass 10s
   bool goodToGo=false;
-  toggleTapper();
+  pwm.setPWM(servonum, 0, 360);
   while(!goodToGo){
     int checkNumber=0;
-    for (int i=0;i<10;i++){
-    if(isGateOpen()) checkNumber++;
+    for (int i=0;i<50;i++){
+    if(distSensor.rangeIsClear(100)) checkNumber++;
     else break;
     }
-    if (checkNumber==10) goodToGo=true; 
+    if (checkNumber==50) goodToGo=true; 
   }
   analogWrite(LM_PWM,35);
   digitalWrite(LM1,HIGH);
@@ -402,7 +353,7 @@ void tapCard(){
   
   Serial.println("lets go");
   action="go";
-  toggleTapper();
+  pwm.setPWM(servonum, 0, 420);
   
   
 }

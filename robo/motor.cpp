@@ -56,16 +56,6 @@ void Motor::motorRight(int motorspeed){
     digitalWrite(m_rm2,HIGH);
 }
 
-void Motor::motorSlight(int leftMotorSpeed,int rightMotorSpeed){
-    analogWrite(m_lm_pwm,leftMotorSpeed);
-    digitalWrite(m_lm1,HIGH);
-    digitalWrite(m_lm2,LOW);
-    analogWrite(m_rm_pwm,rightMotorSpeed);
-    digitalWrite(m_rm1,HIGH);
-    digitalWrite(m_rm2,LOW);
-
-}
-
 void Motor::motorStop(){
     analogWrite(m_lm_pwm,0);
     digitalWrite(m_lm1,LOW);
