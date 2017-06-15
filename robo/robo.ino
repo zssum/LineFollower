@@ -15,7 +15,7 @@
 
 //IR sensor Settings
 #define NUM_SENSORS   6     // number of sensors used
-#define TIMEOUT       4500  // waits for 4500 microseconds for sensor outputs to go low (Adjust higher for better sensitivity to offset increased distance between floor and sensor)
+#define TIMEOUT       4000  // waits for 4500 microseconds for sensor outputs to go low (Adjust higher for better sensitivity to offset increased distance between floor and sensor)
 #define EMITTER_PIN   23    // emitter is controlled by digital pin 23
 
 //Motor Settings
@@ -46,7 +46,7 @@ Motor motor(LM1, LM2, LM_PWM, RM1, RM2, RM_PWM);
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 DistSensor distSensor(trigPin, echoPin, sonicVcc, sonicGnd);
 
-#define INITIAL_SPEED 40
+#define INITIAL_SPEED 45
 int speedSelected= INITIAL_SPEED; //Inital speed 
 float Kp=0.035; // LineFollower proportional constant
 unsigned int sensorValues[NUM_SENSORS]; //IR Sensor values
@@ -109,8 +109,8 @@ void loop()
   // Manual control of the movement of the robot
   else if (action=="f") motor.motorFwd(40);
   else if (action=="b") motor.motorBack(40);
-  else if (action=="l") motor.motorLeft(60); // Rotate Anti-Clockwise
-  else if (action=="r") motor.motorRight(60); //Rotate Clockwise
+  else if (action=="l") motor.motorLeft(70); // Rotate Anti-Clockwise
+  else if (action=="r") motor.motorRight(70); //Rotate Clockwise
   else if (action=="s") motor.motorStop();
   else if (action=="check") {
     Serial.println(distSensor.rangeIsClear(150)); 
@@ -123,14 +123,16 @@ void loop()
   //Ensures robot will brake if an object is in front
   //The robot will continue to move if the obstacle is removed   
 
-  /*
+  
   while(!distSensor.rangeIsClear(30)){  //TODO: check logic if it restarts
-    motor.motorStop();
+    analogWrite(LM_PWM,0);
+    analogWrite(RM_PWM,0);
     debugln("object in front");
     Serial.println("object in front");
     Serial.println(distSensor.cm);
     Serial.println("cm");
-  }*/
+  }
+  
 }
 
 
@@ -264,22 +266,26 @@ void drive(){
   
   
   if(error==-2500 ){ // if line is on the left of the robot, stop line detection and rotate anti-clockwise until line is at nearer to the center of the line before moving off
+    motor.motorStop();
+    delay(200);
     while(error<-1000){
-      motor.motorLeft(65);
+      motor.motorLeft(75);
       error = 2500-qtrrc.readLine(sensorValues);      
     }
     motor.motorStop();
-    delay(100);
+    delay(200);
     debug("lockleft");    
     debugln();
     go();
   } else if (error==2500){  // otherwise if line is on the right, vice versa
+    motor.motorStop();
+    delay(200);
     while(error>1000){
-      motor.motorRight(65);
+      motor.motorRight(75);
       error = 2500-qtrrc.readLine(sensorValues);
     }
     motor.motorStop();
-    delay(100);
+    delay(200);
     debug("lockleft");    
     debugln();
     go();
@@ -288,7 +294,7 @@ void drive(){
       for(int i=5; i>0;i--){
         analogWrite(LM_PWM,leftMotorSpeed/i);
         analogWrite(RM_PWM,rightMotorSpeed/i);
-        delay(10);
+        delay(70);
       }
       isLaunchFromStop=false;
     } else{
@@ -333,21 +339,28 @@ void jerk(){
 }
 
 void tapCard(){
-  //delay(3500);//bypass 10s
+  delay(3500);//bypass 10s
   bool goodToGo=false;
-  pwm.setPWM(servonum, 0, 360);
+  pwm.setPWM(servonum, 0, 350);
+  unsigned long lastTapTime=millis();
   while(!goodToGo){
+    if(millis()-lastTapTime>1500){
+      pwm.setPWM(servonum,0,420);
+      delay(400);
+      pwm.setPWM(servonum,0,350);
+      lastTapTime=millis();
+    }
     int checkNumber=0;
-    for (int i=0;i<50;i++){
+    for (int i=0;i<15;i++){
     if(distSensor.rangeIsClear(100)) checkNumber++;
     else break;
     }
-    if (checkNumber==50) goodToGo=true; 
+    if (checkNumber==15) goodToGo=true; 
   }
-  analogWrite(LM_PWM,35);
+  analogWrite(LM_PWM,45);
   digitalWrite(LM1,HIGH);
   digitalWrite(LM2,LOW);
-  analogWrite(RM_PWM,35);
+  analogWrite(RM_PWM,45);
   digitalWrite(RM1,HIGH);
   digitalWrite(RM2,LOW);
   
