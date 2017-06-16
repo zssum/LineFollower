@@ -1,6 +1,7 @@
 #include <QTRSensors.h>
 #include "motor.h"
 #include "distSensor.h"
+#include "tapper.h"
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 
@@ -43,8 +44,8 @@
 QTRSensorsRC qtrrc((unsigned char[]) {24, 26, 28, 30, 32, 34},
   NUM_SENSORS, TIMEOUT, EMITTER_PIN); 
 Motor motor(LM1, LM2, LM_PWM, RM1, RM2, RM_PWM);
-Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 DistSensor distSensor(trigPin, echoPin, sonicVcc, sonicGnd);
+Tapper tapper(servonum);
 
 #define INITIAL_SPEED 45
 int speedSelected= INITIAL_SPEED; //Inital speed 
@@ -72,11 +73,10 @@ void setup()
   Serial.begin(9600); // set the data rate in bits per second for serial data transmission
   Serial.setTimeout(80);
   Serial1.begin(9600);  //set bluetooth baud rate
+
+  tapper.liftUp();
   
-  //tapper initialisation
-  pwm.begin();
-  pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
-  pwm.setPWM(servonum, 0, 420); // Raise arm up
+  
  
  
   qtrrc.calibrate();
@@ -125,8 +125,7 @@ void loop()
 
   
   while(!distSensor.rangeIsClear(30)){  //TODO: check logic if it restarts
-    analogWrite(LM_PWM,0);
-    analogWrite(RM_PWM,0);
+    motor.changeSpeed(0,0);
     debugln("object in front");
     Serial.println("object in front");
     Serial.println(distSensor.cm);
@@ -292,16 +291,12 @@ void drive(){
   } else { // speed correction when robot is on the line
     if(isLaunchFromStop){ //damped acceleration if robot is moving from a stop
       for(int i=5; i>0;i--){
-        analogWrite(LM_PWM,leftMotorSpeed/i);
-        analogWrite(RM_PWM,rightMotorSpeed/i);
+        motor.changeSpeed(leftMotorSpeed/i,rightMotorSpeed/i);
         delay(70);
       }
       isLaunchFromStop=false;
-    } else{
-      analogWrite(LM_PWM,leftMotorSpeed);
-      analogWrite(RM_PWM,rightMotorSpeed);
-    }    
-  }
+  } else motor.changeSpeed(leftMotorSpeed,rightMotorSpeed);
+}
 
   //Checking for all black signal
   int black=0;
@@ -311,8 +306,7 @@ void drive(){
   }
   if(black==NUM_SENSORS) {
     for(int i=1;i<6;i++){
-    analogWrite(LM_PWM,leftMotorSpeed/2^i);
-    analogWrite(RM_PWM,rightMotorSpeed/2^i);
+    motor.changeSpeed(leftMotorSpeed/2^i,rightMotorSpeed/2^i);
     delay(10);
     }
     motor.motorStop();
@@ -341,13 +335,13 @@ void jerk(){
 void tapCard(){
   delay(3500);//bypass 10s
   bool goodToGo=false;
-  pwm.setPWM(servonum, 0, 350);
+  tapper.tap();
   unsigned long lastTapTime=millis();
   while(!goodToGo){
     if(millis()-lastTapTime>2500){
-      pwm.setPWM(servonum,0,420);
+      tapper.liftUp();
       delay(400);
-      pwm.setPWM(servonum,0,350);
+      tapper.tap();
       lastTapTime=millis();
     }
     int checkNumber=0;
@@ -357,43 +351,15 @@ void tapCard(){
     }
     if (checkNumber==15) goodToGo=true; 
   }
-  analogWrite(LM_PWM,45);
-  digitalWrite(LM1,HIGH);
-  digitalWrite(LM2,LOW);
-  analogWrite(RM_PWM,45);
-  digitalWrite(RM1,HIGH);
-  digitalWrite(RM2,LOW);
+  motor.motorFwd(speedSelected);
   
   Serial.println("lets go");
   action="go";
-  pwm.setPWM(servonum, 0, 420);
+  tapper.liftUp();
   
   
 }
 
-
-//tap or untap tapper
-void toggleTapper(){
-  if (tapped){
-    for (int i=420;i<=510;i++)
-    {
-      pwm.setPWM(servonum, 0, i);
-      delay(1);
-    }
-    delay(50);
-    pwm.setPWM(servonum, 0, 0);
-  } else{
-    pwm.setPWM(servonum, 0, 400);
-    /*for (int i=510;i>=420;i--)
-    {
-      pwm.setPWM(servonum, 0, i);
-      delay(5);
-    }*/
-    delay(50);
-    //pwm.setPWM(servonum, 0, 0);
-  }
-  tapped=!tapped;
-}
 
 //Bluetooth Serial interrupt
 void serialEvent1() {
