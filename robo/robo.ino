@@ -109,8 +109,8 @@ void loop()
   // Manual control of the movement of the robot
   else if (action=="f") motor.motorFwd(40);
   else if (action=="b") motor.motorBack(40);
-  else if (action=="l") motor.motorLeft(70); // Rotate Anti-Clockwise
-  else if (action=="r") motor.motorRight(70); //Rotate Clockwise
+  else if (action=="l") motor.motorLeft(75); // Rotate Anti-Clockwise
+  else if (action=="r") motor.motorRight(75); //Rotate Clockwise
   else if (action=="s") motor.motorStop();
   else if (action=="check") {
     Serial.println(distSensor.rangeIsClear(150)); 
@@ -266,26 +266,26 @@ void drive(){
   
   
   if(error==-2500 ){ // if line is on the left of the robot, stop line detection and rotate anti-clockwise until line is at nearer to the center of the line before moving off
-    motor.motorStop();
-    delay(200);
-    while(error<-1000){
+    //motor.motorStop();
+    //delay(200);
+    while(error==-2500){
       motor.motorLeft(75);
       error = 2500-qtrrc.readLine(sensorValues);      
     }
-    motor.motorStop();
-    delay(200);
+    //motor.motorStop();
+    //delay(200);
     debug("lockleft");    
     debugln();
     go();
   } else if (error==2500){  // otherwise if line is on the right, vice versa
-    motor.motorStop();
-    delay(200);
-    while(error>1000){
+    //motor.motorStop();
+    //delay(200);
+    while(error==2500){
       motor.motorRight(75);
       error = 2500-qtrrc.readLine(sensorValues);
     }
-    motor.motorStop();
-    delay(200);
+    //motor.motorStop();
+    //delay(200);
     debug("lockleft");    
     debugln();
     go();
