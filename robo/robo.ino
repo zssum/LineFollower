@@ -4,7 +4,7 @@
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 
-//#define DEBUG //comment out to disable debugging
+#define DEBUG //comment out to disable debugging
 #ifdef DEBUG
 #define debug(x)     Serial.print(x)
 #define debugln(x)   Serial.println(x)
@@ -344,7 +344,7 @@ void tapCard(){
   pwm.setPWM(servonum, 0, 350);
   unsigned long lastTapTime=millis();
   while(!goodToGo){
-    if(millis()-lastTapTime>1500){
+    if(millis()-lastTapTime>2500){
       pwm.setPWM(servonum,0,420);
       delay(400);
       pwm.setPWM(servonum,0,350);
