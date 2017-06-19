@@ -1,11 +1,11 @@
 #include <QTRSensors.h>
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
 #include "motor.h"
 #include "distSensor.h"
 #include "tapper.h"
-#include <Wire.h>
-#include <Adafruit_PWMServoDriver.h>
 
-#define DEBUG //comment out to disable debugging
+//#define DEBUG //comment out to disable debugging
 #ifdef DEBUG
 #define debug(x)     Serial.print(x)
 #define debugln(x)   Serial.println(x)
@@ -28,9 +28,11 @@
 #define RM1     25
 #define RM2     27
 #define RM_PWM  3
-#define R_GND   29
-#define R_5V    31
+#define MOTOR_GND   29
+#define MOTOR_5V    31
 #define ROBOT_MAX_SPEED_FACTOR  1.7 // Factor of speedSelected to allow for speed variation between left and right wheels
+#define INITIAL_SPEED 45
+#define INITIAL_Kp 0.035
 
 // Ultrasound Distance Detector Settings
 #define  trigPin  51    
@@ -43,15 +45,13 @@
 // Initialising motors and QTR(ir) sensor, tapper and distance sensor
 QTRSensorsRC qtrrc((unsigned char[]) {24, 26, 28, 30, 32, 34},
   NUM_SENSORS, TIMEOUT, EMITTER_PIN); 
-Motor motor(LM1, LM2, LM_PWM, RM1, RM2, RM_PWM);
+Motor motor(LM1, LM2, LM_PWM, RM1, RM2, RM_PWM, MOTOR_GND, MOTOR_5V);
 DistSensor distSensor(trigPin, echoPin, sonicVcc, sonicGnd);
 Tapper tapper(servonum);
 
-#define INITIAL_SPEED 45
 int speedSelected= INITIAL_SPEED; //Inital speed 
-float Kp=0.035; // LineFollower proportional constant
+float Kp=INITIAL_Kp; // LineFollower proportional constant
 unsigned int sensorValues[NUM_SENSORS]; //IR Sensor values
-
 String action; // Robot's state
 String inputString; // Command builder for serial strings
 boolean directionTogg=true; // Toggle between clockwise and anti-clockwise rotation movements as a feedback to user
@@ -60,25 +60,19 @@ boolean tapped=false; //tapper state
 
 void setup()
 {
-  pinMode(13, OUTPUT); //Arduino LED
-  
-  pinMode(R_GND,OUTPUT);
-  pinMode(R_5V, OUTPUT);
-  digitalWrite(R_GND,LOW);
-  digitalWrite(R_5V,HIGH);
-  pinMode(L_GND,OUTPUT); // TODO: check which todelete
-  pinMode(L_5V, OUTPUT); // TODO: check which todelete
-  digitalWrite(R_GND,LOW); // TODO: check which todelete
-  digitalWrite(R_5V,HIGH); // TODO: check which todelete
   Serial.begin(9600); // set the data rate in bits per second for serial data transmission
   Serial.setTimeout(80);
   Serial1.begin(9600);  //set bluetooth baud rate
+  
+  pinMode(13, OUTPUT); //Arduino LED
+  
+  /*pinMode(L_GND,OUTPUT); // TODO: check which todelete
+  pinMode(L_5V, OUTPUT); // TODO: check which todelete
+  digitalWrite(R_GND,LOW); // TODO: check which todelete
+  digitalWrite(R_5V,HIGH); // TODO: check which todelete */
 
   tapper.liftUp();
   
-  
- 
- 
   qtrrc.calibrate();
   // Manual callibration by recording read() values  
   // Raw values at KCD floor: 1104	1104	1020	1224	1264	1388		plus 1000 for noise reduction
@@ -99,12 +93,12 @@ void setup()
 
 void loop()
 {
-  if(action=="read") read(); // Read raw values of line sensor
-  else if (action=="readline") readline(); // Read calibrated values and position of Robot on the line
-  else if (action=="calibrate") calibrate(); //Recalibrate line sensor to a different surface
-  else if (action=="select") selectSpeed();  
-  else if (action=="go") go(); // Switching the motors in the forward direction before moving on to the main robot program
+  if (action=="calibrate") calibrate(); //Recalibrate line sensor to a different surface
   else if (action=="d") drive(); // Main robot program
+  else if (action=="go") go(); // Switching the motors in the forward direction before moving on to the main robot program
+  else if (action=="read") read(); // Read raw values of line sensor
+  else if (action=="readline") readline(); // Read calibrated values and position of Robot on the line
+  else if (action=="select") selectSpeed();    
   else if (action=="tap") tapCard();
   // Manual control of the movement of the robot
   else if (action=="f") motor.motorFwd(40);
@@ -132,39 +126,6 @@ void loop()
     Serial.println("cm");
   }
   
-}
-
-
-void read(){
-  qtrrc.read(sensorValues);
-  // print the sensor values as numbers from 0 to 2500, where 0 means maximum reflectance and
-  // 2500 means minimum reflectance
-  for (unsigned char i = 0; i < NUM_SENSORS; i++)
-  {
-    Serial.print(sensorValues[i]);
-    Serial.print('\t'); // tab to format the raw data into columns in the Serial monitor
-  }
-  Serial.println();  
-  delay(250);
-}
-
-void readline(){
-  // read calibrated sensor values and obtain a measure of the line position from 0 to 5000
-  // To get raw sensor values, call:
-  //  qtrrc.read(sensorValues); instead of unsigned int position = qtrrc.readLine(sensorValues);
-  unsigned int position = qtrrc.readLine(sensorValues); 
-
-  // print the sensor values as numbers from 0 to 1000, where 0 means maximum reflectance and
-  // 1000 means minimum reflectance, followed by the line position
-  for (unsigned char i = 0; i < NUM_SENSORS; i++)
-  {
-    Serial.print(sensorValues[i]);
-    Serial.print('\t');
-  }
-  //Serial.println(); // uncomment this line if you are using raw values
-  Serial.println(position); // comment this line out if you are using raw values
-  
-  delay(250);
 }
 
 //Sensors on the left of the black line and excecute calibration so that the robot will rotate through the black line for all the sensors
@@ -202,6 +163,97 @@ void calibrate(){
   action= "s";
 }
 
+void go(){
+  analogWrite(LM_PWM,0);
+  digitalWrite(LM1,HIGH);
+  digitalWrite(LM2,LOW);
+  analogWrite(RM_PWM,0);
+  digitalWrite(RM1,HIGH);
+  digitalWrite(RM2,LOW);
+  action="d";
+}
+
+void drive(){
+  unsigned int position = qtrrc.readLine(sensorValues); // get calibrated readings along with the line position, refer to the QTR Sensors Arduino Library for more details on line position.
+  int error = 2500-position;
+  int motorSpeed = Kp * error;
+  int rightMotorSpeed = speedSelected - motorSpeed;
+  int leftMotorSpeed = speedSelected + motorSpeed;
+  
+  if (rightMotorSpeed > ROBOT_MAX_SPEED_FACTOR*speedSelected ) rightMotorSpeed = ROBOT_MAX_SPEED_FACTOR*speedSelected; // prevent the motor from going beyond max speed
+  if (leftMotorSpeed > ROBOT_MAX_SPEED_FACTOR*speedSelected ) leftMotorSpeed = ROBOT_MAX_SPEED_FACTOR*speedSelected; 
+  if (rightMotorSpeed < 0) rightMotorSpeed = 0; // keep the motor speed positive
+  if (leftMotorSpeed < 0) leftMotorSpeed = 0; 
+  
+  
+  if(error==-2500 ){ // if line is on the left of the robot, stop line detection and rotate anti-clockwise until line is at nearer to the center of the line before moving off
+    //motor.motorStop();
+    //delay(200);
+    while(error==-2500){
+      motor.motorLeft(75);
+      error = 2500-qtrrc.readLine(sensorValues);      
+    }
+    debug("lockleft");    
+    debugln();
+    go();
+  } else if (error==2500){  // otherwise if line is on the right, vice versa
+    while(error==2500){
+      motor.motorRight(75);
+      error = 2500-qtrrc.readLine(sensorValues);
+    }
+    debug("lockleft");    
+    debugln();
+    go();
+  } else { // speed correction when robot is on the line
+    if(isLaunchFromStop){ //damped acceleration if robot is moving from a stop
+      motor.softAccelerateToSpeed(leftMotorSpeed, rightMotorSpeed);
+      isLaunchFromStop=false;
+  } else motor.changeSpeed(leftMotorSpeed,rightMotorSpeed);
+}
+
+  //Checking for all black signal
+  if (robotIsAtStopPoint()){
+    motor.softBrakeFromSpeed(leftMotorSpeed, rightMotorSpeed);
+    isLaunchFromStop=true;
+    action="tap";
+  }
+  
+  debugln(position);
+  delay(1); // stabilise robot 
+}
+
+void read(){
+  qtrrc.read(sensorValues);
+  // print the sensor values as numbers from 0 to 2500, where 0 means maximum reflectance and
+  // 2500 means minimum reflectance
+  for (unsigned char i = 0; i < NUM_SENSORS; i++)
+  {
+    Serial.print(sensorValues[i]);
+    Serial.print('\t'); // tab to format the raw data into columns in the Serial monitor
+  }
+  Serial.println();  
+  delay(250);
+}
+
+void readline(){
+  // read calibrated sensor values and obtain a measure of the line position from 0 to 5000
+  // To get raw sensor values, call:
+  //  qtrrc.read(sensorValues); instead of unsigned int position = qtrrc.readLine(sensorValues);
+  unsigned int position = qtrrc.readLine(sensorValues); 
+
+  // print the sensor values as numbers from 0 to 1000, where 0 means maximum reflectance and
+  // 1000 means minimum reflectance, followed by the line position
+  for (unsigned char i = 0; i < NUM_SENSORS; i++)
+  {
+    Serial.print(sensorValues[i]);
+    Serial.print('\t');
+  }
+  //Serial.println(); // uncomment this line if you are using raw values
+  Serial.println(position); // comment this line out if you are using raw values
+  
+  delay(250);
+}
+
 //Program to select the motor's speed from 70-110 in increments of 10
 //User presses "selectSpeed" button to start the program, then presses "+" button to increment 10 to the base speed of 70
 //Robot responds with a jerk on press of the increment button
@@ -237,99 +289,8 @@ void selectSpeed(){
   }
   //adjust speed and linefollowing constants
   speedSelected=INITIAL_SPEED+speedSelecting*10; 
-  Kp= 0.035*40/speedSelected;
+  Kp= INITIAL_Kp*INITIAL_SPEED/speedSelected;
   action="s";
-}
-
-void go(){
-  analogWrite(LM_PWM,0);
-  digitalWrite(LM1,HIGH);
-  digitalWrite(LM2,LOW);
-  analogWrite(RM_PWM,0);
-  digitalWrite(RM1,HIGH);
-  digitalWrite(RM2,LOW);
-  action="d";
-}
-
-void drive(){
-  unsigned int position = qtrrc.readLine(sensorValues); // get calibrated readings along with the line position, refer to the QTR Sensors Arduino Library for more details on line position.
-  int error = 2500-position;
-  int motorSpeed = Kp * error;
-  int rightMotorSpeed = speedSelected - motorSpeed;
-  int leftMotorSpeed = speedSelected + motorSpeed;
-  
-  if (rightMotorSpeed > ROBOT_MAX_SPEED_FACTOR*speedSelected ) rightMotorSpeed = ROBOT_MAX_SPEED_FACTOR*speedSelected; // prevent the motor from going beyond max speed
-  if (leftMotorSpeed > ROBOT_MAX_SPEED_FACTOR*speedSelected ) leftMotorSpeed = ROBOT_MAX_SPEED_FACTOR*speedSelected; 
-  if (rightMotorSpeed < 0) rightMotorSpeed = 0; // keep the motor speed positive
-  if (leftMotorSpeed < 0) leftMotorSpeed = 0; 
-  
-  
-  if(error==-2500 ){ // if line is on the left of the robot, stop line detection and rotate anti-clockwise until line is at nearer to the center of the line before moving off
-    //motor.motorStop();
-    //delay(200);
-    while(error==-2500){
-      motor.motorLeft(75);
-      error = 2500-qtrrc.readLine(sensorValues);      
-    }
-    //motor.motorStop();
-    //delay(200);
-    debug("lockleft");    
-    debugln();
-    go();
-  } else if (error==2500){  // otherwise if line is on the right, vice versa
-    //motor.motorStop();
-    //delay(200);
-    while(error==2500){
-      motor.motorRight(75);
-      error = 2500-qtrrc.readLine(sensorValues);
-    }
-    //motor.motorStop();
-    //delay(200);
-    debug("lockleft");    
-    debugln();
-    go();
-  } else { // speed correction when robot is on the line
-    if(isLaunchFromStop){ //damped acceleration if robot is moving from a stop
-      for(int i=5; i>0;i--){
-        motor.changeSpeed(leftMotorSpeed/i,rightMotorSpeed/i);
-        delay(70);
-      }
-      isLaunchFromStop=false;
-  } else motor.changeSpeed(leftMotorSpeed,rightMotorSpeed);
-}
-
-  //Checking for all black signal
-  int black=0;
-  for (unsigned char i = 0; i < NUM_SENSORS; i++)
-  {    
-    if(sensorValues[i]>950) black++;
-  }
-  if(black==NUM_SENSORS) {
-    for(int i=1;i<6;i++){
-    motor.changeSpeed(leftMotorSpeed/2^i,rightMotorSpeed/2^i);
-    delay(10);
-    }
-    motor.motorStop();
-    isLaunchFromStop=true;
-    action="tap";
-  }
-  debugln(position);
-  delay(1); // stabilise robot
-  
-}
-
-
-//Movement to give feedback and information to user when controlling robot
-void jerk(){
-  if(directionTogg){
-          motor.motorLeft(60);
-        } else {
-          motor.motorRight(60);
-        }
-    directionTogg=!directionTogg;        
-    delay(200);
-    motor.motorStop();
-    delay(200);
 }
 
 void tapCard(){
@@ -356,8 +317,32 @@ void tapCard(){
   Serial.println("lets go");
   action="go";
   tapper.liftUp();
-  
-  
+}
+
+
+//Movement to give feedback and information to user when controlling robot
+void jerk(){
+  if(directionTogg){
+          motor.motorLeft(60);
+        } else {
+          motor.motorRight(60);
+        }
+    directionTogg=!directionTogg;        
+    delay(200);
+    motor.motorStop();
+    delay(200);
+}
+
+
+
+bool robotIsAtStopPoint(){
+  int black=0;
+  for (unsigned char i = 0; i < NUM_SENSORS; i++)
+  {    
+    if(sensorValues[i]>950) black++;
+  }
+  if(black==NUM_SENSORS) return true;
+  else return false;
 }
 
 

@@ -2,7 +2,7 @@
 #include "motor.h"
 #include "Arduino.h"
 
-Motor::Motor(int lm1, int lm2, int lm_pwm, int rm1, int rm2, int rm_pwm){
+Motor::Motor(int lm1, int lm2, int lm_pwm, int rm1, int rm2, int rm_pwm, int m_GRD, int m_5V){
     m_lm1=lm1;
     m_lm2=lm2;
     m_lm_pwm=lm_pwm;
@@ -13,10 +13,14 @@ Motor::Motor(int lm1, int lm2, int lm_pwm, int rm1, int rm2, int rm_pwm){
     pinMode(m_lm2,OUTPUT);
     pinMode(m_rm1,OUTPUT);
     pinMode(m_rm2,OUTPUT);
+    pinMode(m_GRD,OUTPUT);
+    pinMode(m_5V,OUTPUT);
     digitalWrite(m_lm1,LOW);
     digitalWrite(m_lm2,LOW);
     digitalWrite(m_rm1,LOW);
     digitalWrite(m_rm2,LOW);
+    digitalWrite(m_GRD,LOW);
+    digitalWrite(m_5V,HIGH);
 }
 
  
@@ -59,6 +63,21 @@ void Motor::motorRight(int motorspeed){
 void Motor::changeSpeed(int leftMotorSpeed, int rightMotorSpeed){
   analogWrite(m_lm_pwm,leftMotorSpeed);
   analogWrite(m_rm_pwm,rightMotorSpeed);
+}
+
+void Motor::softAccelerateToSpeed(int leftMotorSpeed, int rightMotorSpeed){
+   for(int i=5; i>0;i--){
+      changeSpeed(leftMotorSpeed/i,rightMotorSpeed/i);
+      delay(70);
+   }
+}
+
+void Motor::softBrakeFromSpeed(int leftMotorSpeed, int rightMotorSpeed){
+  for(int i=1;i<6;i++){
+    changeSpeed(leftMotorSpeed/2^i,rightMotorSpeed/2^i);
+    delay(10);
+    }
+    motorStop();
 }
 
 void Motor::motorStop(){

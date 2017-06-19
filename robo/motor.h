@@ -5,12 +5,14 @@
 
 class Motor{
     public:
-    	Motor(int lm1, int lm2, int lm_pwm, int rm1, int rm2, int rm_pwm);
+    	Motor(int lm1, int lm2, int lm_pwm, int rm1, int rm2, int rm_pwm, int m_GRD, int m_5V);
     	void motorFwd(int motorspeed);
   		void motorBack(int motorspeed);
   		void motorLeft(int motorspeed);
   		void motorRight(int motorspeed);
   		void changeSpeed(int leftMotorSpeed, int rightMotorSpeed);
+      void softAccelerateToSpeed(int leftMotorSpeed, int rightMotorSpeed);
+      void softBrakeFromSpeed(int leftMotorSpeed, int rightMotorSpeed);
   		void motorStop();
 	private:
   		int m_lm1;
