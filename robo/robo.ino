@@ -23,8 +23,6 @@
 #define LM1     33       
 #define LM2     35
 #define LM_PWM  2 
-#define L_GND   37 // TODO: check which todelete
-#define L_5V    39 // TODO: check which todelete  delete left
 #define RM1     25
 #define RM2     27
 #define RM_PWM  3
@@ -42,7 +40,7 @@
 
 #define servonum  0 // tapper is attached to channel 0 out of 16 of the pwm controlboard
 
-// Initialising motors and QTR(ir) sensor, tapper and distance sensor
+// Initialising line sensor, motors, distance sensor and tapper
 QTRSensorsRC qtrrc((unsigned char[]) {24, 26, 28, 30, 32, 34},
   NUM_SENSORS, TIMEOUT, EMITTER_PIN); 
 Motor motor(LM1, LM2, LM_PWM, RM1, RM2, RM_PWM, MOTOR_GND, MOTOR_5V);
@@ -66,11 +64,6 @@ void setup()
   
   pinMode(13, OUTPUT); //Arduino LED
   
-  /*pinMode(L_GND,OUTPUT); // TODO: check which todelete
-  pinMode(L_5V, OUTPUT); // TODO: check which todelete
-  digitalWrite(R_GND,LOW); // TODO: check which todelete
-  digitalWrite(R_5V,HIGH); // TODO: check which todelete */
-
   tapper.liftUp();
   
   qtrrc.calibrate();
@@ -130,6 +123,7 @@ void loop()
 
 //Sensors on the left of the black line and excecute calibration so that the robot will rotate through the black line for all the sensors
 void calibrate(){  
+  motor.motorStop();
   delay(500); 
   digitalWrite(13, HIGH);    // turn on Arduino's LED to indicate we are in calibration mode
   for (int i = 0; i < 200; i++)  
@@ -186,9 +180,7 @@ void drive(){
   if (leftMotorSpeed < 0) leftMotorSpeed = 0; 
   
   
-  if(error==-2500 ){ // if line is on the left of the robot, stop line detection and rotate anti-clockwise until line is at nearer to the center of the line before moving off
-    //motor.motorStop();
-    //delay(200);
+  if(error==-2500 ){ // if line is on the left (i.e. error=-2500) of the robot, stop line detection and rotate anti-clockwise until detects the line before moving off
     while(error==-2500){
       motor.motorLeft(75);
       error = 2500-qtrrc.readLine(sensorValues);      
@@ -270,7 +262,7 @@ void selectSpeed(){
       if (inChar == '+') {
         speedSelecting++;
         jerk();
-        if(speedSelecting==5){
+        if(speedSelecting==2){
           done=true;
           digitalWrite(13,LOW);
           delay(500);
@@ -310,7 +302,7 @@ void tapCard(){
     if(distSensor.rangeIsClear(100)) checkNumber++;
     else break;
     }
-    if (checkNumber==15) goodToGo=true; 
+    if (checkNumber==15) goodToGo=true; // Proceed only after readings stabilized, i.e. for 15 readings
   }
   motor.motorFwd(speedSelected);
   
