@@ -2,9 +2,8 @@
 #include "tapper.h"
 #include "Arduino.h"
 
-Tapper::Tapper(int channelNumber){
+void Tapper::initialise(int channelNumber){
   servonum=channelNumber;
-  pwm = Adafruit_PWMServoDriver();
   pwm.begin();
   pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
 }

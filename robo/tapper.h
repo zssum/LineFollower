@@ -1,14 +1,14 @@
 //HelperFunctions.h
  
 #ifndef HEADER_TAPPER
-  #define HEADER_TAPEPER
+  #define HEADER_TAPPER
 
-#include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
+#include <Wire.h>
 
 class Tapper{
   public:
-    	Tapper(int channelNumber);
+    	void initialise(int channelNumber);
       void tap();
       void liftUp();
 		
