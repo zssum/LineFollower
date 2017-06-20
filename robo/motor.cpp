@@ -28,7 +28,7 @@ void Motor::motorFwd(int motorspeed){
     analogWrite(m_lm_pwm, motorspeed);
     digitalWrite(m_lm1,HIGH);
     digitalWrite(m_lm2,LOW);
-    analogWrite(m_rm_pwm,motorspeed);
+    analogWrite(m_rm_pwm,motorspeed+motorCorrection);
     digitalWrite(m_rm1,HIGH);
     digitalWrite(m_rm2,LOW);
 }
@@ -37,27 +37,29 @@ void Motor::motorBack(int motorspeed){
     analogWrite(m_lm_pwm, motorspeed);
     digitalWrite(m_lm1,LOW);
     digitalWrite(m_lm2,HIGH);
-    analogWrite(m_rm_pwm,motorspeed);
+    analogWrite(m_rm_pwm,motorspeed+motorCorrection);
     digitalWrite(m_rm1,LOW);
     digitalWrite(m_rm2,HIGH);
 }
 
 void Motor::motorLeft(int motorspeed){
+    analogWrite(m_rm_pwm,motorspeed+motorCorrection);
+    digitalWrite(m_rm1,HIGH);
+    digitalWrite(m_rm2,LOW);
     analogWrite(m_lm_pwm,motorspeed);
     digitalWrite(m_lm1,LOW);
     digitalWrite(m_lm2,HIGH);
-    analogWrite(m_rm_pwm,motorspeed);
-    digitalWrite(m_rm1,HIGH);
-    digitalWrite(m_rm2,LOW);
+    
 }
 
 void Motor::motorRight(int motorspeed){
+    analogWrite(m_rm_pwm,motorspeed+motorCorrection);
+    digitalWrite(m_rm1,LOW);
+    digitalWrite(m_rm2,HIGH);
     analogWrite(m_lm_pwm,motorspeed);
     digitalWrite(m_lm1,HIGH);
     digitalWrite(m_lm2,LOW);
-    analogWrite(m_rm_pwm,motorspeed);
-    digitalWrite(m_rm1,LOW);
-    digitalWrite(m_rm2,HIGH);
+    
 }
 
 void Motor::changeSpeed(int leftMotorSpeed, int rightMotorSpeed){

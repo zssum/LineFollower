@@ -21,6 +21,7 @@ class Motor{
   		int m_rm1;
   		int m_rm2;
   		int m_rm_pwm;
+      int motorCorrection=10;
 
   };
    

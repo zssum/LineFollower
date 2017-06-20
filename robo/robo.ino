@@ -201,7 +201,7 @@ void drive() {
       isLaunchFromStop = false;
     } else motor.changeSpeed(leftMotorSpeed, rightMotorSpeed);
   }
-
+  
   //Checking for all black signal
   if (robotIsAtStopPoint()) {
     motor.softBrakeFromSpeed(leftMotorSpeed, rightMotorSpeed);
