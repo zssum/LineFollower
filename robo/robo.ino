@@ -52,7 +52,6 @@ String action; // Robot's state
 String inputString; // Command builder for serial strings
 boolean directionTogg = true; // Toggle between clockwise and anti-clockwise rotation movements as a feedback to user
 boolean isLaunchFromStop = true; // Used to soften acceleration if robot is launching from rest
-boolean tapped = false; //tapper state
 
 void setup()
 {
@@ -197,7 +196,9 @@ void drive() {
     go();
   } else { // speed correction when robot is on the line
     if (isLaunchFromStop) { //damped acceleration if robot is moving from a stop
-      motor.softAccelerateToSpeed(leftMotorSpeed, rightMotorSpeed);
+      go();
+      motor.changeSpeed(leftMotorSpeed, rightMotorSpeed);
+      //motor.softAccelerateToSpeed(leftMotorSpeed, rightMotorSpeed);
       isLaunchFromStop = false;
     } else motor.changeSpeed(leftMotorSpeed, rightMotorSpeed);
   }
