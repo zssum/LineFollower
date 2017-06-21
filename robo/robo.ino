@@ -13,12 +13,17 @@
 #define debugln(x)
 #endif
 
-//IR sensor Settings
-#define NUM_SENSORS   6     // number of sensors used
-#define TIMEOUT       4000  // waits for 4500 microseconds for sensor outputs to go low (Adjust higher for better sensitivity to offset increased distance between floor and sensor)
+//IR sensor GPIOs
 #define EMITTER_PIN   23    // emitter is controlled by digital pin 23
-
-//Motor Settings
+#define SENSOR1   22
+#define SENSOR2   24
+#define SENSOR3   26
+#define SENSOR4   28
+#define SENSOR5   30  
+#define SENSOR6   32
+#define SENSOR7   34
+#define SENSOR8   36
+//Motor GPIOs
 #define LM1     33
 #define LM2     35
 #define LM_PWM  2
@@ -27,20 +32,23 @@
 #define RM_PWM  3
 #define MOTOR_GND   29
 #define MOTOR_5V    31
-#define ROBOT_MAX_SPEED_FACTOR  1.7 // Factor of speedSelected to allow for speed variation between left and right wheels
-#define INITIAL_SPEED 45
-#define INITIAL_Kp 0.035
-
-// Ultrasound Distance Detector Settings
-#define  trigPin  51
-#define  echoPin  49
-#define  sonicVcc 53
+//Ultrasound Distance Detector GPIOs
 #define  sonicGnd 47
+#define  echoPin  49
+#define  trigPin  51
+#define  sonicVcc 53
 
 #define servonum  0 // tapper is attached to channel 0 out of 16 of the pwm controlboard
 
+//Other Robot Settings
+#define NUM_SENSORS   6     // number of IR sensors used
+#define TIMEOUT       4000  // IR Sensor waits for 4500 microseconds for sensor outputs to go low (Adjust higher for better sensitivity to offset increased distance between floor and sensor)
+#define ROBOT_MAX_SPEED_FACTOR  1.7 // Factor of speedSelected to allow for speed variation between left and right wheels
+#define INITIAL_SPEED 45 
+#define INITIAL_Kp 0.035 // Initial LineFollowing Proportional Constant
+
 // Initialising line sensor, motors, distance sensor and tapper
-QTRSensorsRC qtrrc((unsigned char[]) { 24, 26, 28, 30, 32, 34 }, NUM_SENSORS, TIMEOUT, EMITTER_PIN);
+QTRSensorsRC qtrrc((unsigned char[]) { SENSOR2, SENSOR3, SENSOR4, SENSOR5, SENSOR6, SENSOR7 }, NUM_SENSORS, TIMEOUT, EMITTER_PIN);
 Motor motor(LM1, LM2, LM_PWM, RM1, RM2, RM_PWM, MOTOR_GND, MOTOR_5V);
 DistSensor distSensor(trigPin, echoPin, sonicVcc, sonicGnd);
 Tapper tapper;
