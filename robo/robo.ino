@@ -149,7 +149,7 @@ void drive() {
     }
     debug("lockleft");
     debugln();
-    go();
+    go(); //required to change the directions of the motor to forward
   } else if (error == 2500) { // otherwise if line is on the right, vice versa
     while (error == 2500) {
       motor.motorRight(75);
