@@ -15,14 +15,14 @@
 
 //IR sensor GPIOs
 #define EMITTER_PIN   23    // emitter is controlled by digital pin 23
-#define SENSOR1   22
+#define SENSOR1   22 //not in use
 #define SENSOR2   24
 #define SENSOR3   26
 #define SENSOR4   28
 #define SENSOR5   30  
 #define SENSOR6   32
 #define SENSOR7   34
-#define SENSOR8   36
+#define SENSOR8   36 //not in use
 //Motor GPIOs
 #define LM1     33
 #define LM2     35
@@ -45,7 +45,7 @@
 #define TIMEOUT       4000  // IR Sensor waits for 4500 microseconds for sensor outputs to go low (Adjust higher for better sensitivity to offset increased distance between floor and sensor)
 #define ROBOT_MAX_SPEED_FACTOR  1.7 // Factor of speedSelected to allow for speed variation between left and right wheels
 #define INITIAL_SPEED 45 
-#define INITIAL_Kp 0.035 // Initial LineFollowing Proportional Constant
+#define INITIAL_Kp 0.035 // Initial LineFollowing Proportional Constant. Need to test
 
 // Initialising line sensor, motors, distance sensor and tapper
 QTRSensorsRC qtrrc((unsigned char[]) { SENSOR2, SENSOR3, SENSOR4, SENSOR5, SENSOR6, SENSOR7 }, NUM_SENSORS, TIMEOUT, EMITTER_PIN);
@@ -92,8 +92,7 @@ void setup()
 
 void loop()
 {
-  if (action == "calibrate") calibrate(); //Recalibrate line sensor to a different surface
-  else if (action == "d") drive(); // Main robot program
+  if (action == "d") drive(); // Main robot program
   else if (action == "go") go(); // Switching the motors in the forward direction before moving on to the main robot program
   else if (action == "read") read(); // Read raw values of line sensor
   else if (action == "readline") readline(); // Read calibrated values and position of Robot on the line
@@ -105,19 +104,11 @@ void loop()
   else if (action == "l") motor.motorLeft(75); // Rotate Anti-Clockwise
   else if (action == "r") motor.motorRight(75); //Rotate Clockwise
   else if (action == "s") motor.motorStop();
-  else if (action == "check") {
-    Serial.println(distSensor.rangeIsClear(150));
-    Serial.print(distSensor.cm);
-    Serial.print("cm");
-    Serial.println();
-  }
   else motor.motorStop();
 
   //Ensures robot will brake if an object is in front
   //The robot will continue to move if the obstacle is removed
-
-
-  while (!distSensor.rangeIsClear(30)) { //TODO: check logic if it restarts
+  while (!distSensor.rangeIsClear(30)) { 
     motor.changeSpeed(0, 0);
     debugln("object in front");
     Serial.println("object in front");
@@ -127,41 +118,6 @@ void loop()
 
 }
 
-//Sensors on the left of the black line and excecute calibration so that the robot will rotate through the black line for all the sensors
-void calibrate() {
-  motor.motorStop();
-  delay(500);
-  digitalWrite(13, HIGH);    // turn on Arduino's LED to indicate we are in calibration mode
-  for (int i = 0; i < 200; i++)
-  {
-    if (i < 60) motor.motorLeft(65);
-    else if (i > 60 && i < 140) motor.motorStop();
-    else if (i > 141 && i < 199) motor.motorRight(65);
-    else  motor.motorStop(); //Robot rotates anticlockwise for first 1.5s stops for 2s and rotates clockwise for 1.5s
-
-    qtrrc.calibrate();       // reads all sensors 10 times at TIMEOUT us per read (i.e. ~TIMEOUT*10 ms per call)
-  }
-  digitalWrite(13, LOW);     // turn off Arduino's LED to indicate we are through with calibration
-
-  // print the calibration minimum values measured when emitters were on
-  for (int i = 0; i < NUM_SENSORS; i++)
-  {
-    Serial.print(qtrrc.calibratedMinimumOn[i]);
-    Serial.print(' ');
-  }
-  Serial.println();
-
-  // print the calibration maximum values measured when emitters were on
-  for (int i = 0; i < NUM_SENSORS; i++)
-  {
-    Serial.print(qtrrc.calibratedMaximumOn[i]);
-    Serial.print(' ');
-  }
-  Serial.println();
-  Serial.println();
-  delay(1000);
-  action = "s";
-}
 
 void go() {
   analogWrite(LM_PWM, 0);
@@ -206,14 +162,15 @@ void drive() {
     if (isLaunchFromStop) { //damped acceleration if robot is moving from a stop
       go();
       motor.changeSpeed(leftMotorSpeed, rightMotorSpeed);
-      //motor.softAccelerateToSpeed(leftMotorSpeed, rightMotorSpeed);
+      //motor.softAccelerateToSpeed(leftMotorSpeed, rightMotorSpeed); 
+      //use soft accelerate if motor driver delivers large current. not necessary for the current driver which is not delivering current at the motor's limit
       isLaunchFromStop = false;
     } else motor.changeSpeed(leftMotorSpeed, rightMotorSpeed);
   }
   
   //Checking for all black signal
   if (robotIsAtStopPoint()) {
-    motor.softBrakeFromSpeed(leftMotorSpeed, rightMotorSpeed);
+    motor.softBrakeFromSpeed();
     isLaunchFromStop = true;
     action = "tap";
   }
@@ -254,10 +211,10 @@ void readline() {
   delay(250);
 }
 
-//Program to select the motor's speed from 70-110 in increments of 10
-//User presses "selectSpeed" button to start the program, then presses "+" button to increment 10 to the base speed of 70
+//Program to select the motor's speed from its inital speed in increments of 10
+//User presses "selectSpeed" button to start the program, then presses "+" button to increment 10 to the initial base speed
 //Robot responds with a jerk on press of the increment button
-//speedSelecting takes values 0 to 4. A selection of 0 gives speed of 70 while a selection of 4 gives speed of 110
+//speedSelecting takes values 0 to 2. A selection of 0 gives the initial base speed and each increment to speedSelecting increases the speed by 10
 //At the end of selection, user presses "selectSpeed" button to end the program. The robot will jerk the number of times to feedback the selected speed to the user.
 void selectSpeed() {
   digitalWrite(13, HIGH); //Turn on indicators to feedback the selectSpeed program is ongoing
@@ -294,11 +251,11 @@ void selectSpeed() {
 }
 
 void tapCard() {
-  delay(3500);//bypass 10s
+  delay(3500);// a tapped card may not be tapped again for 10s, the delay allows the robot to wait for the time to lapse
   bool goodToGo = false;
   tapper.tap();
   unsigned long lastTapTime = millis();
-  int attemptNumber=0;
+  int attemptNumber=0; //robot will try tapping on the card reader up to 4 times, after which if all fails, it will stop.
   while (!goodToGo&&attemptNumber<4) {
     if (millis() - lastTapTime > 2500) {
       tapper.liftUp();

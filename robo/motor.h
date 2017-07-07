@@ -12,7 +12,7 @@ class Motor{
   		void motorRight(int motorspeed);
   		void changeSpeed(int leftMotorSpeed, int rightMotorSpeed);
       void softAccelerateToSpeed(int leftMotorSpeed, int rightMotorSpeed);
-      void softBrakeFromSpeed(int leftMotorSpeed, int rightMotorSpeed);
+      void softBrakeFromSpeed();
   		void motorStop();
 	private:
   		int m_lm1;

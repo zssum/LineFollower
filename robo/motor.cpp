@@ -74,12 +74,10 @@ void Motor::softAccelerateToSpeed(int leftMotorSpeed, int rightMotorSpeed){
    }
 }
 
-void Motor::softBrakeFromSpeed(int leftMotorSpeed, int rightMotorSpeed){
-  for(int i=1;i<6;i++){
-    changeSpeed(leftMotorSpeed/2^i,rightMotorSpeed/2^i);
-    delay(10);
-    }
-    motorStop();
+void Motor::softBrakeFromSpeed(){
+  changeSpeed(0,0);
+  delay(60);
+  motorStop();
 }
 
 void Motor::motorStop(){
